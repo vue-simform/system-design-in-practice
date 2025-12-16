@@ -227,9 +227,9 @@ export function useAddComment(postId: string): UseAddCommentReturn {
 
       // User-friendly error messages
       if (errorMessage.includes('empty')) {
-        toast.warning('Comment cannot be empty', 3000);
+        toast.warning('Comment cannot be empty');
       } else if (errorMessage.includes('long')) {
-        toast.warning('Comment is too long (max 1000 characters)', 3000);
+        toast.warning('Comment is too long (max 1000 characters)');
       } else {
         toast.error(errorMessage);
       }
