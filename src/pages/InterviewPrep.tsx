@@ -5,12 +5,10 @@
  * and architectural decisions implemented in this project.
  * 
  * Features:
- * - 60+ real interview questions with detailed answers
+ * - 70+ real interview questions with detailed answers (17 main + 68 follow-ups)
  * - Search across all Q&A content
  * - Filter by category, difficulty, and topic
  * - Track reviewed questions
- * - Export to PDF/Markdown
- * - Flashcard mode for quick review
  * - Progress tracking
  * 
  * Categories:
@@ -18,8 +16,11 @@
  * 2. Performance (Caching, Loading, Optimization)
  * 3. Data Management (State, Mutations, Sync)
  * 4. Patterns (Circuit Breaker, Optimistic UI, Queue)
- * 5. Architecture (Scalability, Tradeoffs, Design Decisions)
+ * 5. Architecture (Scalability, PWA, Tradeoffs, Design Decisions)
  * 6. Accessibility & UX (WCAG, Keyboard Nav, Screen Readers)
+ * 
+ * All questions are based on actual implementation in this codebase,
+ * providing real-world, production-tested answers with code examples.
  */
 
 import React, { useState, useMemo } from 'react';
@@ -362,7 +363,7 @@ class CircuitBreaker {
     if (
       totalRequests >= this.volumeThreshold &&
       (circuit.failures >= this.failureThreshold ||
-       circuit.failures / totalRequests >= 0.5)
+       (totalRequests > 0 && circuit.failures / totalRequests >= 0.5))
     ) {
       circuit.state = 'OPEN';
       console.warn(\`Circuit breaker OPEN for \${endpoint}\`);
@@ -432,8 +433,8 @@ try {
     answer: {
       overview: 'A multi-layer cache balances speed, persistence, and storage capacity. L1 (memory) is fastest, L2 (IndexedDB) is persistent, L3 (Service Worker) handles static assets.',
       keyPoints: [
-        '✅ L1 Cache: React Query (memory) - 50MB, <1ms access, lost on reload',
-        '✅ L2 Cache: IndexedDB (disk) - 50-100MB, ~10ms access, persists across sessions',
+        '✅ L1 Cache: React Query (memory) - No size limit, <1ms access, lost on reload',
+        '✅ L2 Cache: IndexedDB (disk) - 50-100MB quota, ~5-10ms access, persists across sessions',
         '✅ L3 Cache: Service Worker - unlimited (disk), handles static assets',
         '✅ Cache coordination: Check L1 → L2 → L3 → Network',
         '✅ TTL strategy: Posts (7 days), Users (30 days), Comments (3 days)',
@@ -553,7 +554,7 @@ class CacheCoordinator {
         },
         {
           question: 'What are the storage quota limits for IndexedDB and how do you handle them?',
-          answer: '**Quota Limits** vary by browser: Chrome/Edge: ~60% of disk space (temp storage) or unlimited (persistent). Firefox: 50% of free disk, max 2GB per group. Safari: 1GB total, prompts user after 50MB. Mobile: ~50MB typically. **Handling Strategies**: 1) **Monitor Usage**: Use `navigator.storage.estimate()` to check `usage/quota`. Alert at 80% full. 2) **LRU Eviction**: Track `lastAccessTime` for each cached item. When full, delete oldest 10% of items. 3) **Priority Tiers**: Mark critical data (user auth, drafts) as "persistent". Delete non-critical first (analytics, old posts). 4) **Request Persistent Storage**: `navigator.storage.persist()` asks user for unlimited storage. 5) **Compression**: Use gzip/brotli to reduce storage. 6) **User Control**: Provide "Clear Cache" button in settings. 7) **Graceful Degradation**: If storage full, fallback to memory-only cache.'
+          answer: '**Quota Limits** vary by browser: **Chrome/Edge**: ~60% of free disk space (temp storage) or unlimited (persistent storage). **Firefox**: 50% of free disk per origin, max 2GB per group. **Safari**: 1GB per origin, prompts user after 200MB on mobile. **Mobile**: Typically 50-100MB on Android, more restrictive on iOS. **Handling Strategies**: 1) **Monitor Usage**: Use `navigator.storage.estimate()` to check `usage/quota`. Alert at 80% full. 2) **LRU Eviction**: Track `lastAccessTime` for each cached item. When full, delete oldest 10% of items. 3) **Priority Tiers**: Mark critical data (user auth, drafts) as "persistent". Delete non-critical first (analytics, old posts). 4) **Request Persistent Storage**: `await navigator.storage.persist()` asks user for unlimited storage (shows browser prompt). 5) **Compression**: JSON.stringify large objects, compress with pako library. 6) **User Control**: Provide "Clear Cache" button in settings. 7) **Graceful Degradation**: If storage full, fallback to memory-only cache (React Query only).'
         },
         {
           question: 'How do you measure cache effectiveness in production?',
@@ -612,11 +613,8 @@ app.get('/api/posts', async (req, res) => {
 
   res.json({
     data,
-    pagination: {
-      nextCursor: hasMore ? data[data.length - 1].createdAt : null,
-      hasMore,
-      total: await db.posts.count(),
-    },
+    nextCursor: hasMore ? data[data.length - 1].createdAt : null,
+    hasMore,
   });
 });
 
@@ -867,11 +865,11 @@ function useFeedWebSocket() {
         },
         {
           question: 'What are the scaling challenges of WebSocket (sticky sessions, horizontal scaling)?',
-          answer: '**WebSocket scaling requires special architecture**: 1) **Sticky Sessions**: Load balancer must route all requests from same client to same server. Use cookie-based or IP-based stickiness. 2) **Horizontal Scaling Problem**: If user connects to Server A, but event happens on Server B, user doesn\'t receive it. 3) **Solution 1 - Redis Pub/Sub**: All servers subscribe to Redis channels. Event on Server B → publish to Redis → Server A receives → push to client. 4) **Solution 2 - Message Queue**: Use RabbitMQ/Kafka. Servers consume from shared queue. 5) **Solution 3 - Dedicated WebSocket Servers**: Separate stateful WS servers from stateless API servers. Only scale WS layer. 6) **Connection Limits**: Each server handles ~10K concurrent WebSocket connections. Need multiple servers for 100K users. 7) **Health Checks**: Can\'t use HTTP health checks for WS servers. Use custom WebSocket health endpoint.'
+          answer: '**WebSocket scaling requires special architecture**: 1) **Sticky Sessions**: Load balancer must route all requests from same client to same server. Use cookie-based or IP-based stickiness. 2) **Horizontal Scaling Problem**: If user connects to Server A, but event happens on Server B, user doesn\'t receive it. 3) **Solution 1 - Redis Pub/Sub**: All servers subscribe to Redis channels. Event on Server B → publish to Redis → Server A receives → push to client. 4) **Solution 2 - Message Queue**: Use RabbitMQ/Kafka. Servers consume from shared queue. 5) **Solution 3 - Dedicated WebSocket Servers**: Separate stateful WS servers from stateless API servers. Only scale WS layer. 6) **Connection Limits**: Each server typically handles 10K-65K concurrent WebSocket connections (depends on RAM). Modern servers with 64GB RAM can handle 100K+ connections. 7) **Health Checks**: Can\'t use standard HTTP health checks. Use WebSocket ping/pong or custom health endpoint.'
         },
         {
           question: 'How do you handle authentication with SSE/WebSocket?',
-          answer: '**Secure real-time connections**: 1) **Initial Auth**: For WebSocket, send JWT in connection query param `wss://api.com/feed?token=jwt`. For SSE, send in Authorization header. 2) **Token Refresh**: JWT expires after 15 minutes. Send new token via message: `{type: "AUTH_REFRESH", token: newJWT}`. 3) **Session Validation**: Server validates token on every message (optional) or just on connect. 4) **Secure Transport**: Always use WSS (WebSocket Secure) and HTTPS for SSE. Never WS or HTTP. 5) **CSRF Protection**: Verify Origin header matches allowed domains. 6) **Rate Limiting**: Limit messages per connection (100/minute) to prevent abuse. 7) **Revocation**: If user logs out on another tab, broadcast "AUTH_REVOKED" → disconnect all WebSocket connections. 8) **Cookie Alternative**: Use secure HTTP-only cookies instead of query params to avoid token leakage in logs.'
+          answer: '**Secure real-time connections**: 1) **Initial Auth**: For WebSocket, send JWT in connection message after connect (avoid query params for security). For SSE, use Authorization header. 2) **Token Refresh**: Access token typically expires after 15-30 minutes. Implement refresh token mechanism or send new token via message: `{type: "AUTH_REFRESH", token: newJWT}`. 3) **Session Validation**: Validate token on connect. For added security, re-validate periodically (every 5 minutes). 4) **Secure Transport**: Always use WSS (WebSocket Secure) and HTTPS for SSE. Never WS or HTTP in production. 5) **CSRF Protection**: Verify Origin header matches allowed domains to prevent cross-site attacks. 6) **Rate Limiting**: Limit messages per connection (100/minute) to prevent abuse and DoS attacks. 7) **Revocation**: If user logs out, broadcast "AUTH_REVOKED" → disconnect all WebSocket connections for that user. 8) **Security Best Practice**: Avoid JWT in WebSocket URL query params (logs, proxies). Send in first message payload instead.'
         },
         {
           question: 'What about battery life on mobile devices?',
@@ -1196,7 +1194,7 @@ function useKeyboardNavigation(shortcuts: Record<string, () => void>) {
         '✅ Zustand is 10x simpler than Redux (no actions, reducers, middleware)',
         '✅ Never put server state in Redux/Zustand - use React Query',
         '✅ Context causes re-renders for all consumers - split contexts or use Zustand',
-        '✅ Bundle size: Zustand (1KB) vs Redux (8KB) vs React Query (13KB)',
+        '✅ Bundle size: Zustand (~1KB gzipped) vs Redux (~8KB gzipped) vs React Query (~13KB gzipped)',
       ],
       implementation: 'We use React Query for server state, Zustand for UI state (toasts, search filters), local state for forms.',
       codeExample: `// React Query: Server State
@@ -1892,7 +1890,7 @@ app.get('/api/analytics/overview', async (req, res) => {
         },
         {
           question: 'How do you prevent analytics from impacting main app performance?',
-          answer: '**Isolate analytics from production**: 1) **Separate Read Replica**: Route analytics queries to read replica DB. Never touch primary DB. 2) **Rate Limiting**: Limit analytics queries to 10/minute per user. Prevent dashboard spam from overloading DB. 3) **Background Jobs**: Process analytics async in queue. Don\'t block user requests. 4) **Lazy Loading**: Load dashboard in chunks. Top metrics first, charts later. 5) **Code Splitting**: Lazy load analytics page. Don\'t include Recharts (348KB) in main bundle. 6) **CDN for Charts**: Pre-generate chart images server-side, serve via CDN. Faster than client-side rendering. 7) **Throttle Updates**: Update dashboard every 30s, not every second. Reduces server load. 8) **Monitoring**: Track analytics query latency. Alert if >5s. Optimize or add resources.'
+          answer: '**Isolate analytics from production**: 1) **Separate Read Replica**: Route analytics queries to read replica DB. Never touch primary DB. 2) **Rate Limiting**: Limit analytics queries to 10/minute per user. Prevent dashboard spam from overloading DB. 3) **Background Jobs**: Process analytics async in queue. Don\'t block user requests. 4) **Lazy Loading**: Load dashboard in chunks. Top metrics first, charts later. 5) **Code Splitting**: Lazy load analytics page. Don\'t include Recharts (~400KB unminified, ~90KB gzipped) in main bundle. 6) **CDN for Charts**: Pre-generate chart images server-side, serve via CDN. Faster than client-side rendering. 7) **Throttle Updates**: Update dashboard every 30s, not every second. Reduces server load. 8) **Monitoring**: Track analytics query latency. Alert if >5s. Optimize or add resources.'
         },
         {
           question: 'What privacy considerations are important for analytics?',
@@ -1900,6 +1898,475 @@ app.get('/api/analytics/overview', async (req, res) => {
         },
       ],
       relatedTopics: ['Data Visualization', 'Performance', 'Backend Optimization', 'Privacy'],
+    },
+  },
+
+  // ========================================
+  // PWA & SERVICE WORKERS CATEGORY
+  // ========================================
+  {
+    id: 'pwa-1',
+    question: 'What makes an application a Progressive Web App (PWA)? How do you implement PWA functionality?',
+    category: 'architecture',
+    difficulty: 'hard',
+    tags: ['pwa', 'service-worker', 'manifest', 'offline'],
+    answer: {
+      overview: 'A PWA is a web app that provides native app-like experience using service workers, web manifest, and modern APIs. It must be installable, work offline, and feel fast.',
+      keyPoints: [
+        '✅ Service Worker: Intercepts network requests, enables offline functionality',
+        '✅ Web Manifest: JSON file defining app name, icons, display mode, theme color',
+        '✅ HTTPS Required: Service workers only work over secure connections (except localhost)',
+        '✅ Installable: Shows browser install prompt, adds icon to home screen/desktop',
+        '✅ Offline-capable: App works without network using cached resources',
+        '✅ Responsive: Works on any device size (mobile, tablet, desktop)',
+        '✅ App-like: Standalone display mode removes browser UI',
+        '✅ Fast: Loads quickly, smooth animations, immediate responses',
+        '✅ Discoverable: Indexed by search engines like regular websites',
+        '✅ Re-engageable: Push notifications, home screen presence',
+      ],
+      implementation: 'Our PWA includes service worker registration, manifest with proper icons, offline fallback, and install prompts.',
+      codeExample: `// Service Worker Registration (main.tsx)
+import { registerServiceWorker } from './utils/serviceWorkerRegistration';
+
+registerServiceWorker().then(registration => {
+  if (registration) {
+    console.log('Service Worker registered');
+  }
+});
+
+// Web Manifest (public/manifest.json)
+{
+  "name": "News Feed - Social Network",
+  "short_name": "News Feed",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#667eea",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
+
+// Service Worker (public/service-worker.js)
+const CACHE_VERSION = '2.0.0';
+const STATIC_CACHE = \`static-v\${CACHE_VERSION}\`;
+const RUNTIME_CACHE = \`runtime-v\${CACHE_VERSION}\`;
+
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/offline.html',
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
+];
+
+// Install: Pre-cache static assets
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(STATIC_CACHE)
+      .then(cache => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting())
+  );
+});
+
+// Activate: Clean up old caches
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(
+        keys
+          .filter(key => key !== STATIC_CACHE && key !== RUNTIME_CACHE)
+          .map(key => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+// Fetch: Cache-first for static, network-first for dynamic
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+
+  // Static assets: cache-first
+  if (event.request.url.includes('/assets/')) {
+    event.respondWith(
+      caches.match(event.request)
+        .then(cached => cached || fetch(event.request))
+    );
+    return;
+  }
+
+  // API: network-first
+  if (event.request.url.includes('/api/')) {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // HTML: cache-first with offline fallback
+  event.respondWith(
+    caches.match(event.request)
+      .then(cached => cached || fetch(event.request))
+      .catch(() => caches.match('/offline.html'))
+  );
+});`,
+      followUpQuestions: [
+        {
+          question: 'What are the different service worker caching strategies?',
+          answer: '**5 main caching strategies**: 1) **Cache-First**: Check cache first, network if miss. Best for static assets (images, CSS, JS). Fast but may serve stale content. 2) **Network-First**: Try network first, cache fallback. Best for API calls. Always fresh but slower. 3) **Cache-Only**: Only serve from cache. Good for offline-first features. 4) **Network-Only**: Always fetch from network, no caching. Rare use case. 5) **Stale-While-Revalidate**: Serve cached immediately, fetch fresh in background. Best UX - fast + fresh. Use cache-first for assets >1hr old, network-first for real-time data, and SWR for feeds/content.'
+        },
+        {
+          question: 'How do you handle service worker updates without breaking the user experience?',
+          answer: '**Graceful service worker updates**: 1) **Version Control**: Increment cache version in SW file. Old caches auto-deleted on activate. 2) **Skip Waiting**: Call `self.skipWaiting()` in install to activate immediately. 3) **User Notification**: Show toast "Update available. Reload?" with action button. Don\'t force reload. 4) **Background Update**: SW updates in background. User sees update on next visit or manual reload. 5) **Registration.update()**: Call `registration.update()` periodically (every hour) to check for SW updates. 6) **Testing**: Always test SW updates in staging. Cache issues are hard to debug in production. 7) **Message Channel**: Use `postMessage` to communicate between SW and app for coordinated updates.'
+        },
+        {
+          question: 'What are the PWA icon requirements for different platforms?',
+          answer: '**PWA icon requirements vary by platform**: **Android Chrome**: Needs 192x192 and 512x512 PNG icons with \`purpose: "any"\`. Also 192x192 and 512x512 \`purpose: "maskable"\` (icon in safe zone, Android masks to circle/square/squircle). **iOS Safari**: Uses apple-touch-icon (180x180, 192x192). Add \`<link rel="apple-touch-icon" href="/icon-192.png">\`. No install prompt in Safari - users manually "Add to Home Screen". **Windows**: Uses browserconfig.xml and msapplication meta tags. **Best Practice**: Provide 4 icons: icon-192.png, icon-512.png, icon-maskable-192.png, icon-maskable-512.png. Use square images with 20% padding for maskable. Test maskable icons at maskable.app.'
+        },
+        {
+          question: 'How do you make PWA installable on iOS which has limited service worker support?',
+          answer: '**iOS PWA limitations and workarounds**: 1) **No Install Prompt**: iOS Safari doesn\'t show install banner. Users must manually tap Share → Add to Home Screen. 2) **Meta Tags Required**: Add \`<meta name="apple-mobile-web-app-capable" content="yes">\` and \`<meta name="apple-mobile-web-app-status-bar-style" content="default">\`. 3) **Splash Screen**: iOS generates splash screen from apple-touch-icon. No custom splash. 4) **Limited SW**: Service worker support is basic. No background sync, push notifications. 5) **Session Storage**: iOS may clear SW cache if not used for 7 days. 6) **Testing**: Test on real iOS device, not simulator. SW behaves differently. 7) **Graceful Degradation**: Design app to work without full SW support. Core features should work without offline mode on iOS.'
+        },
+      ],
+      relatedTopics: ['Service Workers', 'Offline Support', 'Web Manifest', 'Installability'],
+    },
+  },
+  {
+    id: 'pwa-2',
+    question: 'Explain the service worker lifecycle. What happens during install, activate, and fetch events?',
+    category: 'architecture',
+    difficulty: 'medium',
+    tags: ['service-worker', 'lifecycle', 'events'],
+    answer: {
+      overview: 'Service worker lifecycle has distinct phases: installation, waiting, activation, and idle/fetch. Understanding this lifecycle is crucial for cache management and updates.',
+      keyPoints: [
+        '✅ Install: Triggered when SW is first registered or updated. Pre-cache critical assets here.',
+        '✅ Waiting: New SW waits until old SW is no longer controlling clients',
+        '✅ Activate: Old SW terminated, new SW takes control. Clean up old caches here.',
+        '✅ Fetch: Intercept all network requests from the app. Implement caching strategies.',
+        '✅ skipWaiting(): Force new SW to activate immediately without waiting',
+        '✅ clients.claim(): Take control of all pages immediately without reload',
+        '✅ Update Check: Browser checks for SW updates every 24 hours or on page load',
+        '✅ Byte-diff: Even 1 byte change in SW file triggers update',
+        '✅ Scope: SW only controls pages in its scope (default: same directory)',
+        '✅ Message: Use postMessage for bidirectional communication with app',
+      ],
+      implementation: 'Our service worker uses skipWaiting() to activate immediately and clients.claim() to control all pages.',
+      codeExample: `// Service Worker Lifecycle Events
+
+// 1. INSTALL - Runs once when SW is first installed
+self.addEventListener('install', (event) => {
+  console.log('[SW] Installing...');
+  
+  event.waitUntil(
+    // Pre-cache critical assets
+    caches.open('static-v1')
+      .then(cache => {
+        return cache.addAll([
+          '/',
+          '/index.html',
+          '/offline.html',
+          '/manifest.json',
+        ]);
+      })
+      .then(() => {
+        console.log('[SW] Install complete');
+        // Skip waiting to activate immediately
+        return self.skipWaiting();
+      })
+  );
+});
+
+// 2. ACTIVATE - Runs after install (or after old SW terminated)
+self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating...');
+  
+  event.waitUntil(
+    // Clean up old caches
+    caches.keys()
+      .then(cacheNames => {
+        return Promise.all(
+          cacheNames
+            .filter(name => name !== 'static-v1' && name !== 'runtime-v1')
+            .map(name => {
+              console.log('[SW] Deleting old cache:', name);
+              return caches.delete(name);
+            })
+        );
+      })
+      .then(() => {
+        console.log('[SW] Activate complete');
+        // Take control of all pages immediately
+        return self.clients.claim();
+      })
+  );
+});
+
+// 3. FETCH - Runs on every network request
+self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+
+  event.respondWith(
+    caches.match(event.request)
+      .then(cachedResponse => {
+        if (cachedResponse) {
+          console.log('[SW] Cache hit:', event.request.url);
+          return cachedResponse;
+        }
+
+        console.log('[SW] Cache miss, fetching:', event.request.url);
+        return fetch(event.request).then(response => {
+          // Cache the fetched response
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open('runtime-v1').then(cache => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return response;
+        });
+      })
+      .catch(error => {
+        console.error('[SW] Fetch failed:', error);
+        // Return offline page for navigation requests
+        if (event.request.mode === 'navigate') {
+          return caches.match('/offline.html');
+        }
+        throw error;
+      })
+  );
+});
+
+// 4. MESSAGE - Communication with app
+self.addEventListener('message', (event) => {
+  console.log('[SW] Message received:', event.data);
+  
+  if (event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  
+  if (event.data.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      caches.keys().then(names => 
+        Promise.all(names.map(name => caches.delete(name)))
+      )
+    );
+  }
+});
+
+// From app: trigger SW message
+navigator.serviceWorker.getRegistration().then(reg => {
+  if (reg?.waiting) {
+    // Tell new SW to skip waiting
+    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+  }
+});`,
+      followUpQuestions: [
+        {
+          question: 'What is the difference between skipWaiting() and clients.claim()?',
+          answer: '**skipWaiting()** and **clients.claim()** serve different purposes: **skipWaiting()**: Called in `install` event. Forces new SW to move from "waiting" to "activating" state immediately, terminating old SW. Without it, new SW waits until all tabs with old SW are closed. **clients.claim()**: Called in `activate` event. Makes new SW take control of all open pages/tabs immediately without reload. Without it, pages with old SW continue using old SW until reload. **Use Both**: \`self.skipWaiting()\` in install + \`self.clients.claim()\` in activate = new SW activates and controls all pages immediately. **Warning**: This can cause issues if old and new SW have incompatible cache structures. Test thoroughly.'
+        },
+        {
+          question: 'How does browser determine when to check for service worker updates?',
+          answer: '**SW update triggers**: 1) **24 Hour Check**: Browser automatically checks for SW updates every 24 hours for active users. 2) **Page Load**: Check on every navigation (visiting site). Only byte-diff matters - even whitespace change triggers update. 3) **Manual Update**: \`registration.update()\` forces immediate check. Call this hourly in production. 4) **Hard Reload**: Ctrl+Shift+R bypasses SW and checks for updates. 5) **Force Update**: Add \`updateViaCache: "none"\` in registration to disable HTTP cache for SW file. 6) **Import Changes**: If SW imports another file that changes, it counts as SW update. **Best Practice**: Set SW cache-control header: \`Cache-Control: max-age=0\` to ensure fresh checks. Version your SW: \`const VERSION = "2.0.0"\` and increment on each deploy.'
+        },
+        {
+          question: 'What happens if service worker installation fails?',
+          answer: '**SW installation failure handling**: 1) **No SW Active**: If first install fails, app runs without SW (no offline mode). 2) **Old SW Continues**: If update fails, old SW remains active. Users keep using old version. 3) **Retry**: Browser auto-retries install on next page load. 4) **Error Types**: **Network error** (can\'t fetch SW file) - check HTTPS, CORS. **Parse error** (syntax error in SW) - check console. **Install event rejection** (cache.addAll fails) - check asset URLs, network. 5) **Debugging**: Open DevTools → Application → Service Workers. See "waiting to activate" or error details. 6) **Recovery**: Fix SW code, deploy, users will get update on next visit. 7) **Monitor**: Track SW registration success rate in analytics. Alert if <95%.'
+        },
+        {
+          question: 'Can service workers access localStorage or sessionStorage?',
+          answer: '**No, service workers cannot access localStorage/sessionStorage**. SW runs in separate thread (worker context) with limited APIs. **Why**: localStorage is synchronous, would block SW thread. SW needs to be non-blocking. **Alternatives**: 1) **IndexedDB**: Async key-value store accessible from SW. Best for persistent data. 2) **Cache API**: Store responses in SW cache. Use for HTTP responses. 3) **postMessage**: Send data between SW and main thread. Main thread reads localStorage, sends to SW. 4) **State Management**: Store app state in IndexedDB, accessible from both app and SW. **Available in SW**: fetch, caches, IndexedDB, postMessage, crypto, setTimeout, console. **Not Available**: DOM APIs, localStorage, sessionStorage, cookies, window object.'
+        },
+      ],
+      relatedTopics: ['PWA', 'Caching', 'Offline Support', 'Update Strategies'],
+    },
+  },
+  {
+    id: 'pwa-3',
+    question: 'How would you implement offline form submissions that sync when the user comes back online?',
+    category: 'resilience',
+    difficulty: 'hard',
+    tags: ['offline', 'forms', 'sync', 'background-sync'],
+    answer: {
+      overview: 'Offline form submissions require a queue in IndexedDB, optimistic UI updates, and background sync when connection returns. Handle validation, conflict resolution, and user feedback.',
+      keyPoints: [
+        '✅ Store form submission in IndexedDB queue with status (pending/syncing/failed/completed)',
+        '✅ Show optimistic UI immediately (form submitted, data appears)',
+        '✅ Listen to online/offline events (navigator.onLine, "online" event)',
+        '✅ Auto-sync queue when connection restored (with exponential backoff)',
+        '✅ Use Background Sync API for reliable sync even after tab closed',
+        '✅ Handle validation errors gracefully (show form with errors when online)',
+        '✅ Implement conflict resolution (server-wins, client-wins, merge)',
+        '✅ Provide clear feedback ("Saved locally", "Syncing...", "Synced")',
+        '✅ Allow manual retry for failed submissions',
+        '✅ Set timeouts (expire submissions after 7 days)',
+      ],
+      implementation: 'We use IndexedDB offline queue with auto-sync on reconnection. Background Sync API handles sync even when tab is closed.',
+      codeExample: `// Offline Form Submission Handler
+
+// 1. Store submission in IndexedDB
+async function submitFormOffline(formData) {
+  const submission = {
+    id: generateId(),
+    type: 'CREATE_POST',
+    data: formData,
+    timestamp: Date.now(),
+    status: 'pending',
+    retryCount: 0,
+  };
+
+  // Save to IndexedDB queue
+  await db.offlineQueue.add(submission);
+  
+  // Show optimistic UI
+  showToast('Post saved. Will sync when online.', 'info');
+  
+  // Register background sync (if supported)
+  if ('serviceWorker' in navigator && 'sync' in registration) {
+    try {
+      await registration.sync.register('sync-offline-queue');
+      console.log('Background sync registered');
+    } catch (error) {
+      console.log('Background sync failed:', error);
+      // Fallback to manual sync
+      attemptSync();
+    }
+  } else {
+    // Fallback: Listen for online event
+    window.addEventListener('online', attemptSync);
+  }
+}
+
+// 2. Background Sync (in service worker)
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-offline-queue') {
+    event.waitUntil(syncOfflineQueue());
+  }
+});
+
+async function syncOfflineQueue() {
+  // Get all pending submissions from IndexedDB
+  const queue = await getAllPendingSubmissions();
+  
+  for (const submission of queue) {
+    try {
+      // Mark as syncing
+      await updateSubmissionStatus(submission.id, 'syncing');
+      
+      // Send to server
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submission.data),
+      });
+
+      if (response.ok) {
+        // Success: mark as completed and delete from queue
+        await deleteSubmission(submission.id);
+        
+        // Notify user
+        await showNotification('Post published!', {
+          body: 'Your post was successfully synced.',
+          icon: '/icon-192.png',
+        });
+      } else {
+        // Server error: increment retry count
+        submission.retryCount++;
+        if (submission.retryCount > 3) {
+          await updateSubmissionStatus(submission.id, 'failed');
+        } else {
+          await updateSubmissionStatus(submission.id, 'pending');
+        }
+      }
+    } catch (error) {
+      console.error('Sync failed:', error);
+      submission.retryCount++;
+      await updateSubmissionStatus(submission.id, 'pending');
+    }
+  }
+}
+
+// 3. Manual sync (fallback)
+window.addEventListener('online', async () => {
+  console.log('Back online, syncing...');
+  showToast('Syncing your changes...', 'info');
+  
+  try {
+    await syncOfflineQueue();
+    showToast('All changes synced!', 'success');
+  } catch (error) {
+    console.error('Sync error:', error);
+    showToast('Sync failed. Will retry later.', 'error');
+  }
+});
+
+// 4. UI for pending submissions
+function PendingSubmissionsUI() {
+  const [pending, setPending] = useState([]);
+
+  useEffect(() => {
+    // Load pending submissions
+    db.offlineQueue.toArray().then(setPending);
+  }, []);
+
+  return (
+    <div>
+      {pending.length > 0 && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <p className="text-sm text-yellow-700">
+            You have {pending.length} pending {pending.length === 1 ? 'action' : 'actions'}.
+            {navigator.onLine ? ' Syncing...' : ' Will sync when online.'}
+          </p>
+          {!navigator.onLine && (
+            <button onClick={attemptSync} className="text-yellow-700 underline text-sm">
+              Retry now
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}`,
+      followUpQuestions: [
+        {
+          question: 'What is the Background Sync API and when should you use it?',
+          answer: '**Background Sync API** allows service worker to sync data even after user closes tab/browser. **How it works**: 1) Register sync tag: \`await registration.sync.register("sync-posts")\`. 2) Browser queues sync event. 3) When online, browser fires \`sync\` event in service worker. 4) SW processes queue, browser retries if it fails. **Benefits**: Reliable sync even if user leaves site. No need for "online" event listeners. Browser handles retries automatically. **Limitations**: Chrome/Edge only (no Firefox, Safari). Max 3 auto-retries. Requires SW scope. **When to use**: Critical data (form submissions, messages, purchases). Not for real-time (use SSE/WebSockets). **Fallback**: Always implement fallback with online event listeners for unsupported browsers.'
+        },
+        {
+          question: 'How do you handle form validation for offline submissions?',
+          answer: '**Two-stage validation**: **Client-side (Offline)**: 1) Validate format, length, required fields locally using Zod/Yup. 2) Show errors immediately without network. 3) If valid, add to queue with status "pending". **Server-side (Online)**: 1) When syncing, server validates again (business rules, uniqueness, auth). 2) If validation fails, mark submission as "failed" with error details. 3) Show error toast with action to "Edit and Retry". 4) Load form with saved data and server errors. **User Flow**: User submits offline → passes client validation → queued → comes online → server rejects (duplicate title) → toast shows "Post title already exists. Edit?" → user edits → resubmits. **Important**: Always validate on server. Never trust client-side only. Client validation is UX optimization, not security.'
+        },
+        {
+          question: 'What if the user makes multiple edits to the same item while offline?',
+          answer: '**Merge or replace strategy**: **Option 1 - Last Write Wins**: Store only latest version in queue. Each edit replaces previous. Simple but loses history. **Option 2 - Operation Log**: Store all operations (\`[{op: "update", field: "title", value: "New"}]\`). Replay operations in order when syncing. Complex but preserves intent. **Option 3 - Conflict Detection**: Store version number with each item. On sync, check if server version changed. If conflict, show merge UI. **Example**: User edits post title offline → edits again → edits body → comes online → sync sends all 3 operations in order. **Best Practice**: For simple updates (posts, comments), use last-write-wins. For collaborative documents, use operation log (Operational Transformation). Include \`lastModified\` timestamp for conflict detection.'
+        },
+        {
+          question: 'How long should you keep failed submissions in the queue?',
+          answer: '**Queue retention policy**: **Time-based**: Delete after 7-30 days. Old submissions likely no longer relevant. **Retry-based**: Delete after 3-5 failed retry attempts. Permanent failures won\'t resolve. **Storage-based**: Delete oldest when IndexedDB >80% full (usually 50MB limit). **User choice**: Provide "Failed Submissions" UI where user can: 1) Retry manually, 2) Edit and resubmit, 3) Delete permanently. **Example Policy**: Pending submissions: Keep for 30 days or until synced. Failed submissions: Keep for 7 days, show in UI for manual action. Completed: Delete immediately after sync. **Storage**: Track queue size. If >1000 items or >10MB, prompt user: "You have 1000 pending actions. Sync now or clear old ones?" Alert when quota is low.'
+        },
+      ],
+      relatedTopics: ['Offline Queue', 'Background Sync', 'IndexedDB', 'Form Handling'],
     },
   },
 ];
