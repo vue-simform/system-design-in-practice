@@ -21,19 +21,19 @@
  * - Stale-while-revalidate for optimal UX
  */
 
-const CACHE_NAME = 'newsfeed-v1';
-const STATIC_CACHE_NAME = 'newsfeed-static-v1';
-const RUNTIME_CACHE_NAME = 'newsfeed-runtime-v1';
+const CACHE_VERSION = '2.0.0';
+const CACHE_NAME = `newsfeed-v${CACHE_VERSION}`;
+const STATIC_CACHE_NAME = `newsfeed-static-v${CACHE_VERSION}`;
+const RUNTIME_CACHE_NAME = `newsfeed-runtime-v${CACHE_VERSION}`;
 
 // Assets to cache immediately on install
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/offline.html',
-  '/vite.svg',
-  '/src/main.tsx',
-  '/src/App.tsx',
-  '/src/index.css',
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
 ];
 
 // API endpoints that should use network-first strategy

@@ -1,0 +1,86 @@
+# Netlify Configuration for PWA
+# 
+# Ensures proper headers for service worker, caching, and PWA features
+
+[build]
+  # Build command
+  command = "npm run build"
+  
+  # Output directory
+  publish = "dist"
+  
+  # Set environment variables
+  [build.environment]
+    NODE_VERSION = "18"
+
+# Redirect rules for SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  # Don't apply to API calls or static files
+  conditions = {Role = ["", "public"]}
+
+# Headers for all routes
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Security headers
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "no-referrer-when-downgrade"
+    
+    # Cache control for HTML (no cache)
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Service Worker - must not be cached
+[[headers]]
+  for = "/service-worker.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Service-Worker-Allowed = "/"
+    # CORS headers for service worker
+    Access-Control-Allow-Origin = "*"
+
+# PWA Manifest
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Static assets (JS, CSS) - long cache with immutable
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Images - cache for 1 year
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# API proxying (if using Netlify functions)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Development server settings
+[dev]
+  command = "npm run dev"
+  port = 5173
+  targetPort = 5173
+  autoLaunch = false

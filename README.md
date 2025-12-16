@@ -36,6 +36,15 @@ A production-grade social media feed application demonstrating advanced system d
 - Skip links and ARIA labels
 - Color contrast validation
 
+### Progressive Web App (PWA)
+- Full offline functionality with service worker
+- Installable on desktop and mobile
+- App-like experience (standalone mode)
+- Automatic updates with user notification
+- Cacheable static assets
+- Background sync for offline actions
+- [Complete PWA Documentation](PWA.md)
+
 ## Tech Stack
 
 **Frontend:** React 19, TypeScript, Vite, TailwindCSS  
@@ -70,12 +79,20 @@ npm run dev:server   # Backend (http://localhost:3001)
 npm run test              # Run tests
 npm run test:ui           # Run with UI
 npm run test:coverage     # Generate coverage report
+npm run verify-pwa        # Verify PWA setup
 ```
 
 ### Build
 ```bash
-npm run build
-npm run preview
+npm run build             # Build for production
+npm run preview           # Preview production build
+```
+
+### PWA Development
+```bash
+npm run generate-icons    # Generate PWA icons
+npm run verify-pwa        # Verify PWA setup
+# Open DevTools → Application to test PWA features
 ```
 
 ## Project Structure
@@ -107,10 +124,16 @@ public/              # Static assets and service worker
 
 ## Documentation
 
-The application includes comprehensive in-app documentation:
+### In-App Documentation
 - **Developer Docs:** Detailed API reference, code examples, and implementation patterns
 - **Interview Prep:** 60+ system design interview questions with answers
 - **Analytics Dashboard:** Performance metrics and cache statistics
+
+### Technical Documentation
+- [PWA.md](PWA.md) - Complete Progressive Web App implementation guide
+- [PWA-TESTING.md](PWA-TESTING.md) - PWA testing and verification procedures
+- [PWA-FIXES.md](PWA-FIXES.md) - Summary of PWA fixes and improvements
+- [server/README.md](server/README.md) - Backend server documentation
 
 ## Key Implementation Details
 

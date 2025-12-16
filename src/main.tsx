@@ -32,9 +32,14 @@ try {
 }
 
 // Register Service Worker for PWA functionality
-if (import.meta.env.PROD) {
-  registerServiceWorker();
-}
+// Enable in both dev and prod for testing, but service worker will be more robust in prod
+registerServiceWorker().then(registration => {
+  if (registration) {
+    console.log('✅ Service Worker registered successfully');
+  }
+}).catch(error => {
+  console.warn('⚠️ Service Worker registration failed:', error);
+});
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -17,6 +17,7 @@ import { LoadingSkeleton } from './components/common/LoadingSkeleton';
 import { SkipLink } from './utils/accessibility';
 import { FeedErrorBoundary } from './components/common/ErrorBoundary';
 import { OfflineSyncStatus } from './components/common/OfflineSyncStatus';
+import { PWAStatus } from './components/common/PWAStatus';
 
 // Lazy load Profile, Analytics, Developer Docs, and Interview Prep pages for code splitting
 const Profile = lazy(() => import('./pages/Profile').then(module => ({ default: module.Profile })));
@@ -38,6 +39,9 @@ function App() {
       
       {/* Offline Sync Status */}
       <OfflineSyncStatus />
+      
+      {/* PWA Status - Shows install prompt and update notifications */}
+      <PWAStatus showDebugInfo={import.meta.env.DEV} />
       
       {/* Left Sidebar with Feature List (Fixed Position) */}
       <Sidebar />

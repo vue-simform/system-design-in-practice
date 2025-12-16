@@ -12,7 +12,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "verify-pwa": "bash verify-pwa.sh",
+    "generate-icons": "bash generate-icons.sh"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.11",
