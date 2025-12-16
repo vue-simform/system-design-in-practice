@@ -15,7 +15,7 @@ import { ToastContainer } from './components/common/Toast';
 import { useToastStore } from './hooks/useToast';
 import { LoadingSkeleton } from './components/common/LoadingSkeleton';
 import { SkipLink } from './utils/accessibility';
-import { FeedErrorBoundary } from './components/common/ErrorBoundary';
+import { FeedErrorBoundary, ErrorBoundary } from './components/common/ErrorBoundary';
 import { OfflineSyncStatus } from './components/common/OfflineSyncStatus';
 import { PWAStatus } from './components/common/PWAStatus';
 
@@ -142,24 +142,41 @@ function App() {
           aria-label="Main content"
         >
           <div className="container mx-auto px-6 py-8 max-w-4xl">
-            <Suspense fallback={
-              <div className="space-y-4">
-                <LoadingSkeleton count={6} />
-              </div>
-            }>
-              <Routes>
-                <Route path="/" element={
-                  <FeedErrorBoundary>
-                    <FeedContainer />
-                  </FeedErrorBoundary>
-                } />
-                <Route path="/setup" element={<Home />} />
-                <Route path="/profile/:userId" element={<Profile />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/docs" element={<DeveloperDocs />} />
-                <Route path="/interview-prep" element={<InterviewPrep />} />
-              </Routes>
-            </Suspense>
+            <ErrorBoundary
+              fallback={(error, reset) => (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to Load Page</h2>
+                  <p className="text-gray-600 mb-4">
+                    {error.message || 'An error occurred while loading this page'}
+                  </p>
+                  <button
+                    onClick={reset}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              )}
+            >
+              <Suspense fallback={
+                <div className="space-y-4">
+                  <LoadingSkeleton count={6} />
+                </div>
+              }>
+                <Routes>
+                  <Route path="/" element={
+                    <FeedErrorBoundary>
+                      <FeedContainer />
+                    </FeedErrorBoundary>
+                  } />
+                  <Route path="/setup" element={<Home />} />
+                  <Route path="/profile/:userId" element={<Profile />} />
+                  <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/docs" element={<DeveloperDocs />} />
+                  <Route path="/interview-prep" element={<InterviewPrep />} />
+                </Routes>
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </main>
       </div>

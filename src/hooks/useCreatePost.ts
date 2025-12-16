@@ -20,9 +20,7 @@ import { feedApi } from '../services/api';
 import { useToast } from './useToast';
 import { useOptimisticMutation } from './useOptimisticMutation';
 import { generateTempId } from '../utils/optimisticUpdates';
-
-// Current user ID (in real app, get from auth context)
-const CURRENT_USER_ID = 'user-1';
+import { useCurrentUserId, useCurrentUser } from '../contexts/AuthContext';
 
 interface UseCreatePostOptions {
   onSuccess?: (post: Post) => void;
@@ -62,6 +60,8 @@ interface UseCreatePostReturn {
 export function useCreatePost(options?: UseCreatePostOptions): UseCreatePostReturn {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const currentUserId = useCurrentUserId();
+  const currentUser = useCurrentUser();
 
   /**
    * Post Creation Mutation with useOptimisticMutation
@@ -89,7 +89,7 @@ export function useCreatePost(options?: UseCreatePostOptions): UseCreatePostRetu
       // Add authorId to the request
       const postData: CreatePostData = {
         ...data,
-        authorId: CURRENT_USER_ID,
+        authorId: currentUserId,
       };
       
       return feedApi.createPost(postData);
@@ -113,13 +113,8 @@ export function useCreatePost(options?: UseCreatePostOptions): UseCreatePostRetu
       const optimisticPost: Post = {
         id: tempId,
         content: newPostData.content,
-        authorId: CURRENT_USER_ID,
-        author: {
-          id: CURRENT_USER_ID,
-          username: 'you',
-          name: 'You',
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user1',
-        },
+        authorId: currentUserId,
+        author: currentUser,
         mediaUrls: newPostData.mediaUrls || [],
         likeCount: 0,
         commentCount: 0,

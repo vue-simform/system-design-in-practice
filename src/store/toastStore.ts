@@ -22,7 +22,7 @@ export interface Toast {
   id: string;
   type: ToastType;
   title: string;
-  message?: string;
+  message: string;
   duration?: number;
   dismissible?: boolean;
   action?: {
@@ -42,10 +42,10 @@ interface ToastStore {
   clearAll: () => void;
   
   // Convenience methods
-  success: (title: string, message?: string) => void;
-  error: (title: string, message?: string) => void;
-  warning: (title: string, message?: string) => void;
-  info: (title: string, message?: string) => void;
+  success: (title: string, message: string) => void;
+  error: (title: string, message: string) => void;
+  warning: (title: string, message: string) => void;
+  info: (title: string, message: string) => void;
 }
 
 export const useToastStore = create<ToastStore>((set) => ({

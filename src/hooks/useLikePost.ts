@@ -61,10 +61,10 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { feedApi } from '../services/api';
-import { CURRENT_USER_ID } from '../config/constants';
 import type { Post } from '../types';
 import { useToast } from './useToast';
 import { useOptimisticMutation } from './useOptimisticMutation';
+import { useCurrentUserId } from '../contexts/AuthContext';
 
 interface UseLikePostReturn {
   likePost: () => void;
@@ -85,6 +85,7 @@ interface UseLikePostReturn {
 export function useLikePost(postId: string): UseLikePostReturn {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const currentUserId = useCurrentUserId();
 
   // Helper function to check if post is liked
   function checkIfLiked(postId: string): boolean {
@@ -94,7 +95,7 @@ export function useLikePost(postId: string): UseLikePostReturn {
     for (const page of data.pages) {
       const post = page.posts.find((p: Post) => p.id === postId);
       if (post) {
-        return post.likes?.some((like: any) => like.userId === CURRENT_USER_ID) || false;
+        return post.likes?.some((like: any) => like.userId === currentUserId) || false;
       }
     }
     return false;
@@ -114,7 +115,7 @@ export function useLikePost(postId: string): UseLikePostReturn {
    */
   const likeMutation = useOptimisticMutation({
     queryKey: ['feed', 'infinite'],
-    mutationFn: () => feedApi.likePost(postId, CURRENT_USER_ID),
+    mutationFn: () => feedApi.likePost(postId, currentUserId),
     resource: 'post-like',
     
     // Optimistic update function
@@ -129,7 +130,7 @@ export function useLikePost(postId: string): UseLikePostReturn {
             post.id === postId
               ? {
                   ...post,
-                  likes: [...(post.likes || []), { userId: CURRENT_USER_ID }],
+                  likes: [...(post.likes || []), { userId: currentUserId }],
                   likeCount: post.likeCount + 1,
                   isLiked: true,
                 }
@@ -167,7 +168,7 @@ export function useLikePost(postId: string): UseLikePostReturn {
    */
   const unlikeMutation = useOptimisticMutation({
     queryKey: ['feed', 'infinite'],
-    mutationFn: () => feedApi.unlikePost(postId, CURRENT_USER_ID),
+    mutationFn: () => feedApi.unlikePost(postId, currentUserId),
     resource: 'post-unlike',
     
     // Optimistic update function
@@ -183,7 +184,7 @@ export function useLikePost(postId: string): UseLikePostReturn {
               ? {
                   ...post,
                   likes: (post.likes || []).filter(
-                    (like) => like.userId !== CURRENT_USER_ID
+                    (like) => like.userId !== currentUserId
                   ),
                   likeCount: Math.max(0, post.likeCount - 1),
                   isLiked: false,

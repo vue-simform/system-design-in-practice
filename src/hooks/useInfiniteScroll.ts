@@ -131,6 +131,16 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions = {}) {
     }
   }, [posts]);
 
+  // Cleanup: Disconnect observer on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+    };
+  }, []);
+
   return {
     posts,              // All posts from all pages
     lastPostRef,        // Ref to attach to last post

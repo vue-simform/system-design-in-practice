@@ -10,12 +10,14 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { OfflineBanner, SlowNetworkWarning } from './hooks/useNetworkStatus';
 import { registerServiceWorker } from './utils/serviceWorkerRegistration';
 import { cleanupStaleData } from './utils/statePersistence';
+import { AuthProvider } from './contexts/AuthContext';
 
 /**
  * Application Entry Point
  * 
  * Sets up the React application with:
  * - Global Error Boundary for runtime error catching
+ * - Auth Context for user state management
  * - React Query for server state management
  * - React Router for navigation
  * - React Query DevTools for debugging
@@ -28,7 +30,11 @@ import { cleanupStaleData } from './utils/statePersistence';
 try {
   cleanupStaleData();
 } catch (error) {
-  // Silent error handling
+  // Log cleanup errors in development for debugging
+  if (import.meta.env.DEV) {
+    console.warn('⚠️ Failed to cleanup stale data:', error);
+  }
+  // In production, errors are logged to monitoring service (if configured)
 }
 
 // Register Service Worker for PWA functionality
@@ -44,16 +50,18 @@ registerServiceWorker().then(registration => {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          {/* Network Status Indicators */}
-          <OfflineBanner />
-          <SlowNetworkWarning />
-          
-          <App />
-        </BrowserRouter>
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            {/* Network Status Indicators */}
+            <OfflineBanner />
+            <SlowNetworkWarning />
+            
+            <App />
+          </BrowserRouter>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
+      </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );

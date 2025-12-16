@@ -19,6 +19,10 @@ import type { Post } from '../types';
 
 /**
  * Global error handler for all queries
+ * 
+ * Note: Only logs errors to console/monitoring.
+ * Toasts are handled by individual mutations/queries for better control
+ * and to avoid duplicate notifications.
  */
 function handleQueryError(error: unknown): void {
   const appError = classifyError(error);
@@ -29,16 +33,8 @@ function handleQueryError(error: unknown): void {
     retryable: appError.retryable,
   });
 
-  // Show toast notification for user-facing errors
-  const toastStore = useToastStore.getState();
-  
-  // Don't show toasts for network errors (handled by OfflineBanner)
-  if (appError.type !== 'NETWORK') {
-    toastStore.error(
-      'Error',
-      appError.userMessage
-    );
-  }
+  // Note: Toast notifications are handled by individual queries/mutations
+  // This prevents duplicate toasts when mutations have their own error handlers
 }
 
 /**

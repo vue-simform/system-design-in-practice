@@ -1,5 +1,5 @@
 import type { FeedResponse, Post, Comment, CreatePostData } from '../types';
-import { classifyError, retryWithBackoff, logError } from '../utils/errorHandling';
+import { classifyError, logError } from '../utils/errorHandling';
 
 const API_BASE_URL = 'https://system-design-practical-production.up.railway.app/api';
 const DEFAULT_TIMEOUT = 30000; // 30 seconds
@@ -85,21 +85,21 @@ async function handleResponse<T>(response: Response, context?: string): Promise<
 
 /**
  * API service for news feed operations
- * This service handles all HTTP requests to the backend with retry logic and error handling
+ * This service handles all HTTP requests to the backend
+ * Note: Retry logic is handled by React Query layer for better control
  */
 export const feedApi = {
   /**
-   * Fetch paginated feed posts with retry logic
+   * Fetch paginated feed posts
+   * Retry logic handled by React Query
    */
   async getFeed(cursor?: string, limit = 10): Promise<FeedResponse> {
-    return retryWithBackoff(async () => {
-      const params = new URLSearchParams();
-      if (cursor) params.append('cursor', cursor);
-      params.append('limit', limit.toString());
-      
-      const response = await fetchWithTimeout(`${API_BASE_URL}/feed?${params}`);
-      return handleResponse<FeedResponse>(response, 'getFeed');
-    });
+    const params = new URLSearchParams();
+    if (cursor) params.append('cursor', cursor);
+    params.append('limit', limit.toString());
+    
+    const response = await fetchWithTimeout(`${API_BASE_URL}/feed?${params}`);
+    return handleResponse<FeedResponse>(response, 'getFeed');
   },
 
   /**
@@ -126,29 +126,27 @@ export const feedApi = {
 
   /**
    * Like a post with optimistic update support
+   * Retry logic handled by React Query
    */
   async likePost(postId: string, userId: string): Promise<void> {
-    return retryWithBackoff(async () => {
-      const response = await fetchWithTimeout(`${API_BASE_URL}/posts/${postId}/like`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
-      });
-      await handleResponse(response, 'likePost');
-    }, { maxAttempts: 2 }); // Fewer retries for user actions
+    const response = await fetchWithTimeout(`${API_BASE_URL}/posts/${postId}/like`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    });
+    await handleResponse(response, 'likePost');
   },
 
   /**
    * Unlike a post with optimistic update support
+   * Retry logic handled by React Query
    */
   async unlikePost(postId: string, userId: string): Promise<void> {
-    return retryWithBackoff(async () => {
-      const response = await fetchWithTimeout(
-        `${API_BASE_URL}/posts/${postId}/like?userId=${userId}`,
-        { method: 'DELETE' }
-      );
-      await handleResponse(response, 'unlikePost');
-    }, { maxAttempts: 2 });
+    const response = await fetchWithTimeout(
+      `${API_BASE_URL}/posts/${postId}/like?userId=${userId}`,
+      { method: 'DELETE' }
+    );
+    await handleResponse(response, 'unlikePost');
   },
 
   /**

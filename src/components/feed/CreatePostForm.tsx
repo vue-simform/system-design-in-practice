@@ -39,7 +39,6 @@ import { OptimisticIndicator, RollbackToast } from '../common/OptimisticUI';
  */
 export function CreatePostForm() {
   const [images, setImages] = useState<ImageFile[]>([]);
-  const [isDraftRestored, setIsDraftRestored] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Hooks (Enhanced with Feature #7)
@@ -93,7 +92,6 @@ export function CreatePostForm() {
   // Restore draft on mount
   useRestoreDraft((draft) => {
     handleChange('content')({ target: { value: draft.content } } as any);
-    setIsDraftRestored(true);
   });
 
   /**
@@ -204,12 +202,7 @@ export function CreatePostForm() {
         />
         <div>
           <p className="font-semibold text-sm">Create a post</p>
-          {isDraftRestored && (
-            <p className="text-xs text-green-600">
-              Draft restored
-            </p>
-          )}
-          {lastSaved && !isDraftRestored && (
+          {lastSaved && (
             <p className="text-xs text-gray-500">
               Draft saved {new Date(lastSaved).toLocaleTimeString()}
             </p>

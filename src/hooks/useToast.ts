@@ -1,90 +1,55 @@
 /**
  * useToast Hook
  * 
- * Global toast notification management hook.
- * Provides methods to add and remove toast notifications.
+ * Re-exports toast store and provides convenience methods.
+ * The actual store implementation is in src/store/toastStore.ts
  * 
- * System Design Concepts:
- * - Centralized State: Single source of truth for all toasts
- * - Queue Management: Handle multiple toasts efficiently
- * - Auto-cleanup: Remove toasts after display
- * - Type Safety: TypeScript for error prevention
- * 
- * Features:
- * - Add toast with type and message
- * - Auto-generate unique IDs
- * - Remove toast by ID
- * - Type-safe toast types
+ * This consolidates the two previous toast implementations into one.
  * 
  * Usage:
  * ```tsx
- * const { addToast } = useToast();
+ * const { toast } = useToast();
  * 
  * // Success toast
- * addToast({ type: 'success', message: 'Post liked!' });
+ * toast.success('Post created!', 2000);
  * 
  * // Error toast
- * addToast({ type: 'error', message: 'Already liked' });
+ * toast.error('Failed to create post', 3000);
  * 
- * // Custom duration
- * addToast({ 
- *   type: 'warning', 
- *   message: 'Connection slow', 
- *   duration: 5000 
- * });
+ * // Other methods
+ * toast.warning('Connection slow');
+ * toast.info('New features available');
  * ```
  */
 
-import { create } from 'zustand';
-import type { Toast } from '../components/common/Toast';
+import { useToastStore as useToastStoreImport } from '../store/toastStore';
 
-interface ToastStore {
-  toasts: Toast[];
-  addToast: (toast: Omit<Toast, 'id'>) => void;
-  removeToast: (id: string) => void;
-}
-
-export const useToastStore = create<ToastStore>((set) => ({
-  toasts: [],
-
-  addToast: (toast) => {
-    const id = `toast-${Date.now()}-${Math.random()}`;
-    const newToast: Toast = { ...toast, id };
-
-    set((state) => ({
-      toasts: [...state.toasts, newToast],
-    }));
-  },
-
-  removeToast: (id) => {
-    set((state) => ({
-      toasts: state.toasts.filter((toast) => toast.id !== id),
-    }));
-  },
-}));
+// Re-export the main store
+export { useToastStore } from '../store/toastStore';
 
 // Convenience hook for easier usage
 export function useToast() {
-  const { addToast, removeToast } = useToastStore();
+  const toastStore = useToastStoreImport();
 
   const toast = {
     success: (message: string, duration?: number) => {
-      addToast({ type: 'success', message, duration });
+      toastStore.success('Success', message);
     },
     error: (message: string, duration?: number) => {
-      addToast({ type: 'error', message, duration });
+      toastStore.error('Error', message);
     },
     warning: (message: string, duration?: number) => {
-      addToast({ type: 'warning', message, duration });
+      toastStore.warning('Warning', message);
     },
     info: (message: string, duration?: number) => {
-      addToast({ type: 'info', message, duration });
+      toastStore.info('Info', message);
     },
   };
 
   return {
     toast,
-    addToast,
-    removeToast,
+    addToast: toastStore.addToast,
+    removeToast: toastStore.removeToast,
+    toasts: toastStore.toasts,
   };
 }
