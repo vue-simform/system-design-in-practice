@@ -151,9 +151,9 @@ export function useLikePost(postId: string): UseLikePostReturn {
       const errorMessage = error?.response?.data?.error || error?.message || 'Failed to like post';
       
       if (errorMessage === 'Already liked' || errorMessage.includes('already')) {
-        toast.info('You already liked this post', 2500);
+        toast.info('You already liked this post');
       } else {
-        toast.error(errorMessage, 3000);
+        toast.error(errorMessage);
       }
 
     },
@@ -206,9 +206,9 @@ export function useLikePost(postId: string): UseLikePostReturn {
       const errorMessage = error?.response?.data?.error || error?.message || 'Failed to unlike post';
       
       if (errorMessage === 'Not liked yet' || errorMessage.includes('not liked')) {
-        toast.info("You haven't liked this post yet", 2500);
+        toast.info("You haven't liked this post yet");
       } else {
-        toast.error(errorMessage, 3000);
+        toast.error(errorMessage);
       }
 
     },

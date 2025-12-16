@@ -160,7 +160,7 @@ export function useCreatePost(options?: UseCreatePostOptions): UseCreatePostRetu
     onSuccess: (newPost: Post, _variables) => {
       // Invalidate to sync server state (real ID, timestamps, etc.)
       queryClient.invalidateQueries({ queryKey: ['feed', 'infinite'] });
-      toast.success('Post created successfully!', 2000);
+      toast.success('Post created successfully!');
       options?.onSuccess?.(newPost);
     },
 
@@ -187,7 +187,7 @@ export function useCreatePost(options?: UseCreatePostOptions): UseCreatePostRetu
         errorMessage = message;
       }
 
-      toast.error(errorMessage, 3000);
+      toast.error(errorMessage);
       options?.onError?.(error instanceof Error ? error : new Error(errorMessage));
 
     },

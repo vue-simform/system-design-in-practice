@@ -7,7 +7,7 @@ import App from './App.tsx';
 import './index.css';
 import { queryClient } from './config/queryClient';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
-import { OfflineBanner, SlowNetworkWarning } from './hooks/useNetworkStatus';
+import { NetworkStatusIndicators } from './components/common/NetworkStatusIndicators';
 import { registerServiceWorker } from './utils/serviceWorkerRegistration';
 import { cleanupStaleData } from './utils/statePersistence';
 import { AuthProvider } from './contexts/AuthContext';
@@ -53,9 +53,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
           <BrowserRouter>
-            {/* Network Status Indicators */}
-            <OfflineBanner />
-            <SlowNetworkWarning />
+            {/* Network Status Indicators (controlled by settings) */}
+            <NetworkStatusIndicators />
             
             <App />
           </BrowserRouter>

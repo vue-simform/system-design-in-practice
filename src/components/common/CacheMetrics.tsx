@@ -167,7 +167,7 @@ export function CacheMetrics() {
       </div>
 
       {/* Overall Hit Rate */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 mb-6">
+      <div className="bg-linear-to-r from-blue-50 to-purple-50 rounded-lg p-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600 mb-1">

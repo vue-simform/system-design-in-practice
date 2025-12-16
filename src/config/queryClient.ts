@@ -13,7 +13,6 @@
 
 import { QueryClient } from '@tanstack/react-query';
 import { classifyError, logError, isRetryableError } from '../utils/errorHandling';
-import { useToastStore } from '../store/toastStore';
 import { cachePosts } from '../utils/indexedDBCache';
 import type { Post } from '../types';
 

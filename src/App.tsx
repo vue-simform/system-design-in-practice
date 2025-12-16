@@ -18,16 +18,20 @@ import { SkipLink } from './utils/accessibility';
 import { FeedErrorBoundary, ErrorBoundary } from './components/common/ErrorBoundary';
 import { OfflineSyncStatus } from './components/common/OfflineSyncStatus';
 import { PWAStatus } from './components/common/PWAStatus';
+import { useSettingsStore } from './store/settingsStore';
 
-// Lazy load Profile, Analytics, Developer Docs, and Interview Prep pages for code splitting
+// Lazy load Profile, Analytics, Developer Docs, Interview Prep, and Settings pages for code splitting
 const Profile = lazy(() => import('./pages/Profile').then(module => ({ default: module.Profile })));
 const Analytics = lazy(() => import('./components/analytics/AnalyticsDashboard').then(module => ({ default: module.AnalyticsDashboard })));
 const DeveloperDocs = lazy(() => import('./pages/DeveloperDocs').then(module => ({ default: module.DeveloperDocs })));
 const InterviewPrep = lazy(() => import('./pages/InterviewPrep').then(module => ({ default: module.InterviewPrep })));
+const Settings = lazy(() => import('./pages/Settings').then(module => ({ default: module.Settings })));
 
 function App() {
   const { toasts, removeToast } = useToastStore();
   const location = useLocation();
+  const showPWAStatus = useSettingsStore((state) => state.showPWAStatus);
+  const showNetworkStatus = useSettingsStore((state) => state.showNetworkStatus);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -37,11 +41,11 @@ function App() {
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
       
-      {/* Offline Sync Status */}
-      <OfflineSyncStatus />
+      {/* Offline Sync Status (controlled by settings) */}
+      {showNetworkStatus && <OfflineSyncStatus />}
       
-      {/* PWA Status - Shows install prompt and update notifications */}
-      <PWAStatus showDebugInfo={import.meta.env.DEV} />
+      {/* PWA Status - Shows install prompt and update notifications (controlled by settings) */}
+      {showPWAStatus && <PWAStatus showDebugInfo={import.meta.env.DEV} />}
       
       {/* Left Sidebar with Feature List (Fixed Position) */}
       <Sidebar />
@@ -117,6 +121,18 @@ function App() {
                 >
                   Analytics
                 </Link>
+                <Link 
+                  to="/settings" 
+                  className={`px-3 py-1.5 text-sm rounded transition-colors ${
+                    location.pathname === '/settings' 
+                      ? 'bg-blue-50 text-blue-700 font-medium' 
+                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                  aria-label="Application settings"
+                  aria-current={location.pathname === '/settings' ? 'page' : undefined}
+                >
+                  Settings
+                </Link>
                 {/* <Link 
                   to="/profile/1" 
                   className={`px-3 py-1.5 text-sm rounded transition-colors ${
@@ -174,6 +190,7 @@ function App() {
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/docs" element={<DeveloperDocs />} />
                   <Route path="/interview-prep" element={<InterviewPrep />} />
+                  <Route path="/settings" element={<Settings />} />
                 </Routes>
               </Suspense>
             </ErrorBoundary>

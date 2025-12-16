@@ -231,7 +231,7 @@ export function useAddComment(postId: string): UseAddCommentReturn {
       } else if (errorMessage.includes('long')) {
         toast.warning('Comment is too long (max 1000 characters)', 3000);
       } else {
-        toast.error(errorMessage, 3000);
+        toast.error(errorMessage);
       }
 
     },

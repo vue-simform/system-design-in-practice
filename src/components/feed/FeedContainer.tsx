@@ -31,6 +31,7 @@ import { useRef, useCallback } from 'react';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import { useSearchResults } from '../../hooks/useSearchPosts';
 import { useSearchFilterStore, selectDebouncedQuery, selectActiveFilter, selectActiveSort } from '../../store/searchFilterStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { PAGINATION } from '../../config/constants';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { NetworkError, ServerError, ErrorState as EnhancedErrorState, EmptyState } from '../common/ErrorStates';
@@ -39,7 +40,8 @@ import { PostCard } from './PostCard';
 import { CreatePostForm } from './CreatePostForm';
 import { SearchBar } from './SearchBar';
 import { FilterBar } from './FilterBar';
-// import { ScrollDebugger } from '../common/ScrollDebugger';
+import { ScrollDebugger } from '../common/ScrollDebugger';
+import { CacheMetrics } from '../common/CacheMetrics';
 import { useKeyboardNavigation, useAnnouncer, AriaLiveRegion } from '../../utils/accessibility';
 
 export function FeedContainer() {
@@ -48,6 +50,10 @@ export function FeedContainer() {
   const activeFilter = useSearchFilterStore(selectActiveFilter);
   const activeSort = useSearchFilterStore(selectActiveSort);
   const isSearchActive = debouncedQuery.trim().length > 0;
+  
+  // Get settings for debug components
+  const showScrollDebugger = useSettingsStore((state) => state.showScrollDebugger);
+  const showCacheMetrics = useSettingsStore((state) => state.showCacheMetrics);
 
   // Fetch regular feed data with infinite scroll
   const feedQuery = useInfiniteScroll({ 
@@ -262,8 +268,13 @@ export function FeedContainer() {
         </div>
       )}
 
-      {/* Scroll Position Debugger (dev mode only) */}
-      {/* {import.meta.env.DEV && <ScrollDebugger storageKey="feed-page" />} */}
+      {/* Debug Components (controlled by settings) */}
+      {showScrollDebugger && <ScrollDebugger storageKey="feed-page" />}
+      {showCacheMetrics && (
+        <div className="mt-6">
+          <CacheMetrics />
+        </div>
+      )}
     </div>
   );
 }

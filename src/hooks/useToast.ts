@@ -11,10 +11,10 @@
  * const { toast } = useToast();
  * 
  * // Success toast
- * toast.success('Post created!', 2000);
+ * toast.success('Post created!');
  * 
  * // Error toast
- * toast.error('Failed to create post', 3000);
+ * toast.error('Failed to create post');
  * 
  * // Other methods
  * toast.warning('Connection slow');
@@ -32,16 +32,16 @@ export function useToast() {
   const toastStore = useToastStoreImport();
 
   const toast = {
-    success: (message: string, duration?: number) => {
+    success: (message: string) => {
       toastStore.success('Success', message);
     },
-    error: (message: string, duration?: number) => {
+    error: (message: string) => {
       toastStore.error('Error', message);
     },
-    warning: (message: string, duration?: number) => {
+    warning: (message: string) => {
       toastStore.warning('Warning', message);
     },
-    info: (message: string, duration?: number) => {
+    info: (message: string) => {
       toastStore.info('Info', message);
     },
   };
