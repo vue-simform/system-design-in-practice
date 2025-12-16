@@ -5,6 +5,7 @@ import { resolve } from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/system-design-in-practice/',
   plugins: [
     react(),
     {
@@ -20,13 +21,8 @@ export default defineConfig({
     }
   ],
   server: {
-    // Proxy API calls to Netlify Functions during development
-    proxy: {
-      '/.netlify/functions': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-      },
-    },
+    port: 5173,
+    open: true,
   },
   build: {
     rollupOptions: {
