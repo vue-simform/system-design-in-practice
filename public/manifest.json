@@ -1,0 +1,49 @@
+{
+  "name": "News Feed - Social Network",
+  "short_name": "News Feed",
+  "description": "A modern, scalable news feed application with offline support and real-time updates",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "social",
+    "news"
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "View Feed",
+      "short_name": "Feed",
+      "description": "View your personalized news feed",
+      "url": "/",
+      "icons": []
+    },
+    {
+      "name": "Create Post",
+      "short_name": "Post",
+      "description": "Create a new post",
+      "url": "/?action=create",
+      "icons": []
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "iarc_rating_id": "",
+  "features": [
+    "offline",
+    "caching",
+    "real-time updates",
+    "infinite scroll"
+  ]
+}
