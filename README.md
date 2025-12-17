@@ -2,7 +2,7 @@
 
 A production-grade social media feed application demonstrating advanced system design patterns, resilient UX, and performance optimization techniques. Built as a comprehensive learning resource with 60+ interview questions and detailed developer documentation.
 
-**Live Demo:** https://system-design-practical.netlify.app/
+**Live Demo:** https://system-design-in-practice.netlify.app/
 
 ## Core Features
 
