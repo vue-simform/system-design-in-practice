@@ -261,6 +261,13 @@ class OfflineSyncManager {
 
     for (const action of actions) {
       try {
+        // Apply exponential backoff delay before retry
+        if (action.retries > 0) {
+          // Exponential backoff: 1s, 2s, 4s, 8s, max 30s
+          const delay = Math.min(1000 * Math.pow(2, action.retries), 30000);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+
         // Update to syncing
         await updateActionStatus(action.id, 'syncing');
 

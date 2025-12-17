@@ -15,6 +15,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { sessionPersistentStorage } from '../utils/statePersistence';
+import { useScrollRestoration } from '../hooks/useScrollRestoration';
 import { ProfileHeader } from '../components/profile/ProfileHeader';
 import { ProfileFeed } from '../components/profile/ProfileFeed';
 import { LoadingSkeleton } from '../components/common/LoadingSkeleton';
@@ -23,6 +24,14 @@ export function Profile() {
   const { userId } = useParams<{ userId: string }>();
   
   const { data, isLoading, isError, error } = useUserProfile(userId);
+
+  // Scroll restoration for profile page (per user)
+  useScrollRestoration(`profile-${userId}`, {
+    autoSave: true,
+    autoRestore: true,
+    smooth: false,
+    restoreDelay: 150,
+  });
 
   // Save current profile scroll position before navigating back to feed
   const handleBackToFeed = () => {

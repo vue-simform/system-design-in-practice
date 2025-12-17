@@ -84,6 +84,7 @@ import { useToast } from './useToast';
 import { useOptimisticMutation } from './useOptimisticMutation';
 import { generateTempId } from '../utils/optimisticUpdates';
 import type { Comment, Post } from '../types';
+import { enqueueAction } from '../utils/offlineQueue';
 
 interface AddCommentParams {
   text: string;
@@ -134,6 +135,30 @@ export function useAddComment(postId: string): UseAddCommentReturn {
 
       if (params.text.length > 1000) {
         throw new Error('Comment is too long (max 1000 characters)');
+      }
+
+      // If offline, enqueue action and return temporary comment
+      if (!navigator.onLine) {
+        await enqueueAction('ADD_COMMENT', {
+          postId,
+          text: params.text.trim(),
+          parentId: params.parentId || null,
+        });
+        
+        toast.info('You\'re offline. Comment will sync when back online.');
+        
+        // Return temporary comment for optimistic update
+        return {
+          id: generateTempId('comment'),
+          postId,
+          userId: CURRENT_USER_ID,
+          text: params.text.trim(),
+          parentId: params.parentId || null,
+          createdAt: new Date().toISOString(),
+          replies: [],
+          replyCount: 0,
+          likeCount: 0,
+        };
       }
 
       // Send to API

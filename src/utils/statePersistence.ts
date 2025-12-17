@@ -290,6 +290,90 @@ class PersistentStorage {
     this.log(`Cleanup: removed ${removed} expired items`);
     return removed;
   }
+
+  /**
+   * Set multiple items at once (batch operation)
+   * More efficient than calling set() multiple times
+   * 
+   * @param items - Array of key-value-options tuples
+   * @returns Number of successfully set items
+   */
+  setMany<T>(items: Array<{ key: string; value: T; options?: StorageOptions }>): number {
+    let successCount = 0;
+
+    items.forEach(({ key, value, options }) => {
+      try {
+        this.set(key, value, options);
+        successCount++;
+      } catch (error) {
+        // Continue with other items even if one fails
+        this.log(`Failed to set "${key}" in batch`, error);
+      }
+    });
+
+    this.log(`Batch set: ${successCount}/${items.length} successful`);
+    return successCount;
+  }
+
+  /**
+   * Get multiple items at once (batch operation)
+   * More efficient than calling get() multiple times
+   * 
+   * @param keys - Array of keys to retrieve
+   * @returns Map of key-value pairs (only includes found items)
+   */
+  getMany<T>(keys: string[]): Map<string, T> {
+    const results = new Map<string, T>();
+
+    keys.forEach(key => {
+      const value = this.get<T>(key);
+      if (value !== null) {
+        results.set(key, value);
+      }
+    });
+
+    this.log(`Batch get: found ${results.size}/${keys.length} items`);
+    return results;
+  }
+
+  /**
+   * Remove multiple items at once (batch operation)
+   * More efficient than calling remove() multiple times
+   * 
+   * @param keys - Array of keys to remove
+   * @returns Number of successfully removed items
+   */
+  removeMany(keys: string[]): number {
+    let successCount = 0;
+
+    keys.forEach(key => {
+      try {
+        this.remove(key);
+        successCount++;
+      } catch (error) {
+        this.log(`Failed to remove "${key}" in batch`, error);
+      }
+    });
+
+    this.log(`Batch remove: ${successCount}/${keys.length} successful`);
+    return successCount;
+  }
+
+  /**
+   * Check if multiple keys exist (batch operation)
+   * 
+   * @param keys - Array of keys to check
+   * @returns Map of key-exists pairs
+   */
+  hasMany(keys: string[]): Map<string, boolean> {
+    const results = new Map<string, boolean>();
+
+    keys.forEach(key => {
+      results.set(key, this.has(key));
+    });
+
+    return results;
+  }
 }
 
 // ============================================================================

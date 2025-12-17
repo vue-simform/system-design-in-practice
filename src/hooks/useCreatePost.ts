@@ -21,6 +21,7 @@ import { useToast } from './useToast';
 import { useOptimisticMutation } from './useOptimisticMutation';
 import { generateTempId } from '../utils/optimisticUpdates';
 import { useCurrentUserId, useCurrentUser } from '../contexts/AuthContext';
+import { enqueueAction } from '../utils/offlineQueue';
 
 interface UseCreatePostOptions {
   onSuccess?: (post: Post) => void;
@@ -84,6 +85,33 @@ export function useCreatePost(options?: UseCreatePostOptions): UseCreatePostRetu
 
       if (data.content.length > 5000) {
         throw new Error('Post is too long (max 5000 characters)');
+      }
+
+      // If offline, enqueue action and return a temporary post
+      if (!navigator.onLine) {
+        await enqueueAction('CREATE_POST', {
+          content: data.content,
+          mediaUrls: data.mediaUrls || [],
+        });
+        
+        // Return temporary post for optimistic update
+        const tempPost: Post = {
+          id: generateTempId('post'),
+          content: data.content,
+          authorId: currentUserId,
+          author: currentUser,
+          mediaUrls: data.mediaUrls || [],
+          likeCount: 0,
+          commentCount: 0,
+          shareCount: 0,
+          isLiked: false,
+          likes: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        
+        toast.info('You\'re offline. Post will sync when back online.');
+        return tempPost;
       }
 
       // Add authorId to the request

@@ -43,6 +43,7 @@ import { FilterBar } from './FilterBar';
 import { ScrollDebugger } from '../common/ScrollDebugger';
 import { CacheMetrics } from '../common/CacheMetrics';
 import { useKeyboardNavigation, useAnnouncer, AriaLiveRegion } from '../../utils/accessibility';
+import { useScrollRestoration } from '../../hooks/useScrollRestoration';
 
 export function FeedContainer() {
   // Get search/filter state
@@ -54,6 +55,14 @@ export function FeedContainer() {
   // Get settings for debug components
   const showScrollDebugger = useSettingsStore((state) => state.showScrollDebugger);
   const showCacheMetrics = useSettingsStore((state) => state.showCacheMetrics);
+
+  // Scroll restoration for feed page
+  useScrollRestoration('feed-page', {
+    autoSave: true,
+    autoRestore: true,
+    smooth: false, // Instant restoration for better UX
+    restoreDelay: 100, // Small delay to let content load first
+  });
 
   // Fetch regular feed data with infinite scroll
   const feedQuery = useInfiniteScroll({ 

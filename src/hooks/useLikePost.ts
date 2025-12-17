@@ -65,6 +65,7 @@ import type { Post } from '../types';
 import { useToast } from './useToast';
 import { useOptimisticMutation } from './useOptimisticMutation';
 import { useCurrentUserId } from '../contexts/AuthContext';
+import { enqueueAction } from '../utils/offlineQueue';
 
 interface UseLikePostReturn {
   likePost: () => void;
@@ -115,7 +116,15 @@ export function useLikePost(postId: string): UseLikePostReturn {
    */
   const likeMutation = useOptimisticMutation({
     queryKey: ['feed', 'infinite'],
-    mutationFn: () => feedApi.likePost(postId, currentUserId),
+    mutationFn: async () => {
+      // If offline, enqueue action
+      if (!navigator.onLine) {
+        await enqueueAction('LIKE_POST', { postId });
+        toast.info('You\'re offline. Like will sync when back online.');
+        return; // Return early, optimistic update already applied
+      }
+      return feedApi.likePost(postId, currentUserId);
+    },
     resource: 'post-like',
     
     // Optimistic update function
@@ -168,7 +177,15 @@ export function useLikePost(postId: string): UseLikePostReturn {
    */
   const unlikeMutation = useOptimisticMutation({
     queryKey: ['feed', 'infinite'],
-    mutationFn: () => feedApi.unlikePost(postId, currentUserId),
+    mutationFn: async () => {
+      // If offline, enqueue action
+      if (!navigator.onLine) {
+        await enqueueAction('UNLIKE_POST', { postId });
+        toast.info('You\'re offline. Unlike will sync when back online.');
+        return; // Return early, optimistic update already applied
+      }
+      return feedApi.unlikePost(postId, currentUserId);
+    },
     resource: 'post-unlike',
     
     // Optimistic update function
