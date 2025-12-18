@@ -12,6 +12,7 @@
   # Set environment variables
   [build.environment]
     NODE_VERSION = "18"
+    VITE_API_BASE_URL = "https://system-design-practical-production.up.railway.app/api"
 
 # Redirect rules for SPA
 [[redirects]]

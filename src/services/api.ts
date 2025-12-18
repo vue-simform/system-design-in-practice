@@ -1,7 +1,7 @@
 import type { FeedResponse, Post, Comment, CreatePostData } from '../types';
 import { classifyError, logError } from '../utils/errorHandling';
 
-const API_BASE_URL = 'https://system-design-practical-production.up.railway.app/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://system-design-practical-production.up.railway.app/api';
 const DEFAULT_TIMEOUT = 30000; // 30 seconds
 
 // ============================================================================
@@ -115,13 +115,22 @@ export const feedApi = {
    * Create a new post
    */
   async createPost(data: CreatePostData): Promise<Post> {
-    const response = await fetch(`${API_BASE_URL}/posts`, {
+    console.log('[API] createPost called with data:', data);
+    console.log('[API] API_BASE_URL:', API_BASE_URL);
+    console.log('[API] Full URL:', `${API_BASE_URL}/posts`);
+    
+    const response = await fetchWithTimeout(`${API_BASE_URL}/posts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('Failed to create post');
-    return response.json();
+    
+    console.log('[API] Response status:', response.status);
+    console.log('[API] Response ok:', response.ok);
+    
+    const result = await handleResponse<Post>(response, 'createPost');
+    console.log('[API] createPost result:', result);
+    return result;
   },
 
   /**

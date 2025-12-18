@@ -326,13 +326,18 @@ export function useFormValidation<T extends Record<string, any>>({
         e.preventDefault();
       }
 
+      console.log('[useFormValidation] handleSubmit called', { values });
+
       // Mark all fields as touched
       setAllTouched();
 
       // Validate all fields
       const isFormValid = await validateAllFields();
 
+      console.log('[useFormValidation] Validation result:', isFormValid);
+
       if (!isFormValid) {
+        console.log('[useFormValidation] Form invalid, stopping submission');
         return;
       }
 
@@ -340,8 +345,12 @@ export function useFormValidation<T extends Record<string, any>>({
       setIsSubmitting(true);
       
       try {
+        console.log('[useFormValidation] Calling onSubmit');
         await onSubmit(values);
+        console.log('[useFormValidation] onSubmit completed');
       } catch (error) {
+        console.error('[useFormValidation] Submit error:', error);
+        throw error;
       } finally {
         if (mounted.current) {
           setIsSubmitting(false);

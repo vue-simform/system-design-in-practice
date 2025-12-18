@@ -78,12 +78,16 @@ export function useCreatePost(options?: UseCreatePostOptions): UseCreatePostRetu
     queryKey: ['feed', 'infinite'],
     
     mutationFn: async (data: Omit<CreatePostData, 'authorId'>) => {
+      console.log('[useCreatePost] mutationFn called with data:', data);
+      
       // Validate content
       if (!data.content || data.content.trim().length === 0) {
+        console.error('[useCreatePost] Empty content');
         throw new Error('Post content cannot be empty');
       }
 
       if (data.content.length > 5000) {
+        console.error('[useCreatePost] Content too long');
         throw new Error('Post is too long (max 5000 characters)');
       }
 
@@ -120,7 +124,10 @@ export function useCreatePost(options?: UseCreatePostOptions): UseCreatePostRetu
         authorId: currentUserId,
       };
       
-      return feedApi.createPost(postData);
+      console.log('[useCreatePost] Calling API with:', postData);
+      const result = await feedApi.createPost(postData);
+      console.log('[useCreatePost] API response:', result);
+      return result;
     },
 
     resource: 'post-create',

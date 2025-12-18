@@ -492,17 +492,9 @@ export async function validateFieldAsync(
  * Post creation validation schema
  */
 export const postValidationSchema: ValidationSchema = {
-  title: [
-    required({ message: 'Post title is required' }),
-    minLength(5, { message: 'Title must be at least 5 characters' }),
-    maxLength(200, { message: 'Title must not exceed 200 characters' }),
-    pattern(/^[a-zA-Z0-9\s.,!?'-]+$/, {
-      message: 'Title contains invalid characters',
-    }),
-  ],
   content: [
     required({ message: 'Post content is required' }),
-    minLength(10, { message: 'Content must be at least 10 characters' }),
+    minLength(1, { message: 'Content must be at least 1 character' }),
     maxLength(5000, { message: 'Content must not exceed 5000 characters' }),
   ],
 };
