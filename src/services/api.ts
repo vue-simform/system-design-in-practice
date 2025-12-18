@@ -93,10 +93,17 @@ export const feedApi = {
    * Fetch paginated feed posts
    * Retry logic handled by React Query
    */
-  async getFeed(cursor?: string, limit = 10): Promise<FeedResponse> {
+  async getFeed(
+    cursor?: string,
+    limit = 10,
+    filter: 'all' | 'following' | 'liked' = 'all',
+    sort: 'newest' | 'popular' | 'trending' = 'newest'
+  ): Promise<FeedResponse> {
     const params = new URLSearchParams();
     if (cursor) params.append('cursor', cursor);
     params.append('limit', limit.toString());
+    params.append('filter', filter);
+    params.append('sort', sort);
     
     const response = await fetchWithTimeout(`${API_BASE_URL}/feed?${params}`);
     return handleResponse<FeedResponse>(response, 'getFeed');
