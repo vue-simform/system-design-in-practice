@@ -15,7 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useOfflineQueue, getAllActions, type QueuedAction } from '../../utils/offlineQueue';
 
-const CURRENT_USER_ID = 'user-1'; // TODO: Replace with real auth
+// const CURRENT_USER_ID = 'user-1'; // TODO: Replace with real auth
 
 export function OfflineSyncStatus() {
   const { stats, isSyncing, syncNow } = useOfflineQueue();
