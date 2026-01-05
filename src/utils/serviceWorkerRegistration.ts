@@ -25,39 +25,54 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
   }
 
   try {
+    // Check if already registered to prevent duplicate registrations
+    const existingRegistration = await navigator.serviceWorker.getRegistration('/');
+    
+    if (existingRegistration) {
+      console.log('[SW Registration] Service Worker already registered');
+      return existingRegistration;
+    }
     
     const registration = await navigator.serviceWorker.register('/service-worker.js', {
       scope: '/',
+      // Prevent service worker from updating too aggressively during development
+      updateViaCache: 'none',
     });
 
+    console.log('[SW Registration] Service Worker registered successfully');
 
     // Handle service worker updates
     registration.addEventListener('updatefound', () => {
       const newWorker = registration.installing;
       if (!newWorker) return;
 
+      console.log('[SW Registration] Update found, installing new worker');
 
       newWorker.addEventListener('statechange', () => {
-
         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
           // New service worker installed while old one is controlling the page
+          console.log('[SW Registration] New service worker installed');
           
           // Show update notification
           showUpdateNotification(newWorker);
         }
 
         if (newWorker.state === 'activated') {
+          console.log('[SW Registration] Service worker activated');
         }
       });
     });
 
-    // Check for updates periodically (every hour)
-    setInterval(() => {
-      registration.update();
-    }, 60 * 60 * 1000);
+    // Check for updates periodically (every hour) - only in production
+    if (import.meta.env.PROD) {
+      setInterval(() => {
+        registration.update();
+      }, 60 * 60 * 1000);
+    }
 
     return registration;
   } catch (error) {
+    console.error('[SW Registration] Failed to register:', error);
     return null;
   }
 }

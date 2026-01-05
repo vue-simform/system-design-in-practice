@@ -38,10 +38,14 @@ try {
 }
 
 // Register Service Worker for PWA functionality
-// Enable in both dev and prod for testing, but service worker will be more robust in prod
+// Note: Also enabled in development for offline testing
+// The service worker won't interfere with Vite's HMR
 registerServiceWorker().then(registration => {
   if (registration) {
     console.log('✅ Service Worker registered successfully');
+    if (import.meta.env.DEV) {
+      console.log('⚠️ Service Worker active in development mode for offline testing');
+    }
   }
 }).catch(error => {
   console.warn('⚠️ Service Worker registration failed:', error);

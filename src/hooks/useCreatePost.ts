@@ -22,6 +22,7 @@ import { useOptimisticMutation } from './useOptimisticMutation';
 import { generateTempId } from '../utils/optimisticUpdates';
 import { useCurrentUserId, useCurrentUser } from '../contexts/AuthContext';
 import { enqueueAction } from '../utils/offlineQueue';
+import { classifyError } from '../utils/errorHandling';
 
 interface UseCreatePostOptions {
   onSuccess?: (post: Post) => void;
@@ -195,7 +196,13 @@ export function useCreatePost(options?: UseCreatePostOptions): UseCreatePostRetu
     onSuccess: (newPost: Post, _variables) => {
       // Invalidate to sync server state (real ID, timestamps, etc.)
       queryClient.invalidateQueries({ queryKey: ['feed', 'infinite'] });
-      toast.success('Post created successfully!');
+      
+      // Only show success toast if we're online
+      // When offline, the info toast "Post will sync when back online" is already shown
+      if (navigator.onLine) {
+        toast.success('Post created successfully!');
+      }
+      
       options?.onSuccess?.(newPost);
     },
 
@@ -203,28 +210,12 @@ export function useCreatePost(options?: UseCreatePostOptions): UseCreatePostRetu
      * Error callback with validation-aware messages
      */
     onError: (error: any, _variables) => {
-      // Determine error message
-      let errorMessage = 'Failed to create post';
+      // Use classifyError for user-friendly messages
+      const appError = classifyError(error);
       
-      const message = error?.response?.data?.error || error?.message || '';
-      
-      if (message.includes('empty')) {
-        errorMessage = 'Post content cannot be empty';
-      } else if (message.includes('long') || message.includes('5000')) {
-        errorMessage = 'Post is too long (max 5000 characters)';
-      } else if (message.includes('network')) {
-        errorMessage = 'Network error. Please check your connection.';
-      } else if (message.includes('validation')) {
-        errorMessage = 'Invalid post content. Please check your input.';
-      } else if (message.includes('timeout')) {
-        errorMessage = 'Request timed out. Please try again.';
-      } else if (message) {
-        errorMessage = message;
-      }
-
-      toast.error(errorMessage);
-      options?.onError?.(error instanceof Error ? error : new Error(errorMessage));
-
+      // Show the user-friendly message from error classification
+      toast.error(appError.userMessage);
+      options?.onError?.(error instanceof Error ? error : new Error(appError.userMessage));
     },
 
     retry: 2, // Retry twice on failure

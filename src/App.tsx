@@ -7,18 +7,20 @@
  * Accessibility: WCAG 2.1 AA compliant with keyboard navigation, ARIA labels, and focus management
  */
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useCallback } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { FeedContainer } from './components/feed/FeedContainer';
 import { Sidebar } from './components/common/Sidebar';
 import { ToastContainer } from './components/common/Toast';
-import { useToastStore } from './hooks/useToast';
+import { useToast } from './hooks/useToast';
 import { LoadingSkeleton } from './components/common/LoadingSkeleton';
 import { SkipLink } from './utils/accessibility';
 import { FeedErrorBoundary, ErrorBoundary } from './components/common/ErrorBoundary';
 import { OfflineSyncStatus } from './components/common/OfflineSyncStatus';
 import { PWAStatus } from './components/common/PWAStatus';
 import { useSettingsStore } from './store/settingsStore';
+import { initializeOfflineQueue } from './utils/offlineQueueInit';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Lazy load Profile, Analytics, Developer Docs, Interview Prep, and Settings pages for code splitting
 const Profile = lazy(() => import('./pages/Profile').then(module => ({ default: module.Profile })));
@@ -28,10 +30,28 @@ const InterviewPrep = lazy(() => import('./pages/InterviewPrep').then(module => 
 const Settings = lazy(() => import('./pages/Settings').then(module => ({ default: module.Settings })));
 
 function App() {
-  const { toasts, removeToast } = useToastStore();
+  const { toasts, removeToast, toast } = useToast();
   const location = useLocation();
   const showPWAStatus = useSettingsStore((state) => state.showPWAStatus);
   const showNetworkStatus = useSettingsStore((state) => state.showNetworkStatus);
+  const queryClient = useQueryClient();
+
+  // Stable callback for sync completion
+  const handleSyncComplete = useCallback((result: { success: number; failed: number }) => {
+    console.log('[App] Sync completed, showing toast:', result);
+    // Show toast notification when sync completes
+    if (result.success > 0) {
+      toast.success(`Synced ${result.success} ${result.success === 1 ? 'item' : 'items'}`);
+    }
+    if (result.failed > 0) {
+      toast.error(`Failed to sync ${result.failed} ${result.failed === 1 ? 'item' : 'items'}`);
+    }
+  }, [toast]);
+
+  // Initialize offline queue handlers once on app startup
+  useEffect(() => {
+    initializeOfflineQueue(queryClient, handleSyncComplete);
+  }, [queryClient, handleSyncComplete]);
 
   return (
     <div className="flex min-h-screen bg-gray-50">

@@ -85,6 +85,7 @@ import { useOptimisticMutation } from './useOptimisticMutation';
 import { generateTempId } from '../utils/optimisticUpdates';
 import type { Comment, Post } from '../types';
 import { enqueueAction } from '../utils/offlineQueue';
+import { classifyError } from '../utils/errorHandling';
 
 interface AddCommentParams {
   text: string;
@@ -220,9 +221,13 @@ export function useAddComment(postId: string): UseAddCommentReturn {
      * Success callback
      */
     onSuccess: () => {
-      // Invalidate to sync server state (real IDs, timestamps, etc.)
-      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-      queryClient.invalidateQueries({ queryKey: ['feed', 'infinite'] });
+      // Only invalidate when online to avoid flicker
+      // When offline, the temp comment stays in cache until sync happens
+      if (navigator.onLine) {
+        // Invalidate to sync server state (real IDs, timestamps, etc.)
+        queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+        queryClient.invalidateQueries({ queryKey: ['feed', 'infinite'] });
+      }
       // Optional: show toast for user feedback
       // toast.success('Comment added!', 2000);
     },
@@ -231,7 +236,8 @@ export function useAddComment(postId: string): UseAddCommentReturn {
      * Error callback with validation-aware messages
      */
     onError: (error: any, _params: AddCommentParams) => {
-      const errorMessage = error?.response?.data?.error || error?.message || 'Failed to add comment';
+      // Use classifyError for user-friendly messages
+      const appError = classifyError(error);
 
       // Also rollback feed cache changes
       queryClient.setQueryData(['feed', 'infinite'], (old: any) => {
@@ -250,15 +256,8 @@ export function useAddComment(postId: string): UseAddCommentReturn {
         };
       });
 
-      // User-friendly error messages
-      if (errorMessage.includes('empty')) {
-        toast.warning('Comment cannot be empty');
-      } else if (errorMessage.includes('long')) {
-        toast.warning('Comment is too long (max 1000 characters)');
-      } else {
-        toast.error(errorMessage);
-      }
-
+      // Show the user-friendly message from error classification
+      toast.error(appError.userMessage);
     },
 
     retry: 2, // Retry twice on failure

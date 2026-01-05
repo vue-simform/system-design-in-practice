@@ -246,16 +246,19 @@ class OfflineSyncManager {
    */
   async syncQueue(): Promise<{ success: number; failed: number }> {
     if (this.isSyncing) {
+      console.log('[OfflineQueue] Already syncing, skipping');
       return { success: 0, failed: 0 };
     }
 
     if (!navigator.onLine) {
+      console.log('[OfflineQueue] Offline, skipping sync');
       return { success: 0, failed: 0 };
     }
 
     this.isSyncing = true;
 
     const actions = await getPendingActions();
+    console.log(`[OfflineQueue] Starting sync. Found ${actions.length} pending actions`, actions);
     let successCount = 0;
     let failedCount = 0;
 
@@ -274,11 +277,14 @@ class OfflineSyncManager {
         // Get handler
         const handler = this.callbacks.get(action.type);
         if (!handler) {
+          console.error(`[OfflineQueue] No handler registered for ${action.type}`);
           throw new Error(`No handler registered for ${action.type}`);
         }
 
         // Execute sync
+        console.log(`[OfflineQueue] Syncing action: ${action.type}`, action.payload);
         await handler(action);
+        console.log(`[OfflineQueue] Successfully synced: ${action.type}`);
 
         // Mark as completed
         await updateActionStatus(action.id, 'completed');
@@ -287,6 +293,7 @@ class OfflineSyncManager {
         // Remove after successful sync
         await dequeueAction(action.id);
       } catch (error) {
+        console.error(`[OfflineQueue] Failed to sync action: ${action.type}`, error);
         
         // Mark as failed (or back to pending for retry)
         if (action.retries >= 3) {
@@ -304,6 +311,7 @@ class OfflineSyncManager {
     }
 
     this.isSyncing = false;
+    console.log(`[OfflineQueue] Sync complete. Success: ${successCount}, Failed: ${failedCount}`);
 
     return { success: successCount, failed: failedCount };
   }

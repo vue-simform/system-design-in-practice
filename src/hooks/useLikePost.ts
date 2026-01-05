@@ -66,6 +66,7 @@ import { useToast } from './useToast';
 import { useOptimisticMutation } from './useOptimisticMutation';
 import { useCurrentUserId } from '../contexts/AuthContext';
 import { enqueueAction } from '../utils/offlineQueue';
+import { classifyError } from '../utils/errorHandling';
 
 interface UseLikePostReturn {
   likePost: () => void;
@@ -146,25 +147,32 @@ export function useLikePost(postId: string): UseLikePostReturn {
               : post
           ),
         })),
-      };
-    },
+      };    },
 
     // Success callback
     onSuccess: () => {
-      // Invalidate to ensure server state is reflected (e.g., final like count)
-      queryClient.invalidateQueries({ queryKey: ['feed', 'infinite'] });
+      // Only invalidate when online to avoid flicker
+      // When offline, the optimistic update stays until sync
+      if (navigator.onLine) {
+        // Invalidate to ensure server state is reflected (e.g., final like count)
+        queryClient.invalidateQueries({ queryKey: ['feed', 'infinite'] });
+      }
     },
 
     // Error callback with user-friendly messages
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.error || error?.message || 'Failed to like post';
+      // Check for specific error messages first
+      // Handle both ApiError structure (error.data.error) and Axios structure (error.response.data.error)
+      const errorMessage = error?.data?.error || error?.response?.data?.error || error?.message || '';
       
-      if (errorMessage === 'Already liked' || errorMessage.includes('already')) {
+      if (errorMessage === 'Already liked' || errorMessage.includes('already liked')) {
         toast.info('You already liked this post');
-      } else {
-        toast.error(errorMessage);
+        return;
       }
-
+      
+      // Use classifyError for other errors
+      const appError = classifyError(error);
+      toast.error(appError.userMessage);
     },
 
     retry: 2, // Retry twice on failure
@@ -214,20 +222,28 @@ export function useLikePost(postId: string): UseLikePostReturn {
 
     // Success callback
     onSuccess: () => {
-      // Invalidate to ensure server state is reflected (e.g., final like count)
-      queryClient.invalidateQueries({ queryKey: ['feed', 'infinite'] });
+      // Only invalidate when online to avoid flicker
+      // When offline, the optimistic update stays until sync
+      if (navigator.onLine) {
+        // Invalidate to ensure server state is reflected (e.g., final like count)
+        queryClient.invalidateQueries({ queryKey: ['feed', 'infinite'] });
+      }
     },
 
     // Error callback with user-friendly messages
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.error || error?.message || 'Failed to unlike post';
+      // Check for specific error messages first
+      // Handle both ApiError structure (error.data.error) and Axios structure (error.response.data.error)
+      const errorMessage = error?.data?.error || error?.response?.data?.error || error?.message || '';
       
       if (errorMessage === 'Not liked yet' || errorMessage.includes('not liked')) {
         toast.info("You haven't liked this post yet");
-      } else {
-        toast.error(errorMessage);
+        return;
       }
-
+      
+      // Use classifyError for other errors
+      const appError = classifyError(error);
+      toast.error(appError.userMessage);
     },
 
     retry: 2,
