@@ -38,10 +38,12 @@ import type { FeedResponse } from '../types';
 interface UseInfiniteScrollOptions {
   limit?: number;
   enabled?: boolean;
+  filter?: 'all' | 'following' | 'liked';
+  sort?: 'newest' | 'popular' | 'trending';
 }
 
 export function useInfiniteScroll(options: UseInfiniteScrollOptions = {}) {
-  const { limit = 10, enabled = true } = options;
+  const { limit = 10, enabled = true, filter = 'all', sort = 'newest' } = options;
   
   // Observer reference for cleanup
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -56,10 +58,10 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions = {}) {
     error,
     refetch,
   } = useInfiniteQuery<FeedResponse, Error>({
-    queryKey: ['feed', 'infinite', { limit }],
+    queryKey: ['feed', 'infinite', { limit, filter, sort }],
     
     // Fetch function receives pageParam (cursor from previous page)
-    queryFn: ({ pageParam }) => feedApi.getFeed(pageParam as string | undefined, limit),
+    queryFn: ({ pageParam }) => feedApi.getFeed(pageParam as string | undefined, limit, filter, sort),
     
     // Extract cursor for next page from response
     getNextPageParam: (lastPage) => {

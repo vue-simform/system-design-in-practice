@@ -26,16 +26,47 @@ server.use(middlewares);
 // Custom routes
 server.use(jsonServer.bodyParser);
 
-// GET /api/feed - Get paginated feed
+// GET /api/feed - Get paginated feed with filter and sort support
 server.get('/api/feed', (req, res) => {
   const db = router.db;
   const limit = parseInt(req.query.limit) || 10;
   const cursor = req.query.cursor || null;
+  const filter = req.query.filter || 'all';
+  const sort = req.query.sort || 'newest';
   
   let posts = db.get('posts').value() || [];
+  const users = db.get('users').value() || [];
+  const likes = db.get('likes').value() || [];
   
-  // Sort by createdAt descending
-  posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  // Apply filter type (all/following/liked)
+  // Note: For demo purposes, following/liked use simulated logic
+  if (filter === 'liked') {
+    // Show posts liked by user u1 (demo user)
+    const likedPostIds = likes.filter(l => l.userId === 'u1').map(l => l.postId);
+    posts = posts.filter(p => likedPostIds.includes(p.id));
+  } else if (filter === 'following') {
+    // For demo, show posts from users u2, u3, u4 (simulating "following")
+    posts = posts.filter(p => ['u2', 'u3', 'u4'].includes(p.authorId));
+  }
+  // 'all' filter - no additional filtering needed
+  
+  // Apply sorting
+  if (sort === 'newest') {
+    posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  } else if (sort === 'popular') {
+    // Sort by like count descending
+    posts.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+  } else if (sort === 'trending') {
+    // Trending = combination of recent + popular
+    // Score = likeCount * 2 + commentCount - (age_in_hours / 24)
+    posts.sort((a, b) => {
+      const scoreA = (a.likeCount * 2) + a.commentCount - 
+        ((Date.now() - new Date(a.createdAt)) / (1000 * 60 * 60 * 24));
+      const scoreB = (b.likeCount * 2) + b.commentCount - 
+        ((Date.now() - new Date(b.createdAt)) / (1000 * 60 * 60 * 24));
+      return scoreB - scoreA;
+    });
+  }
   
   // Apply cursor pagination
   let startIndex = 0;
@@ -62,7 +93,6 @@ server.get('/api/feed', (req, res) => {
   }
   
   // Enrich posts with user data
-  const users = db.get('users').value();
   const enrichedPosts = paginatedPosts.map(post => {
     const author = users.find(u => u.id === post.authorId);
     return {
@@ -75,6 +105,8 @@ server.get('/api/feed', (req, res) => {
       } : null
     };
   });
+  
+  console.log(`📰 Feed: filter=${filter}, sort=${sort}, results=${enrichedPosts.length}/${posts.length}`);
   
   res.json({
     posts: enrichedPosts,

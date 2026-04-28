@@ -66,7 +66,6 @@ export function CreatePostForm() {
     handleReset,
   } = useFormValidation({
     initialValues: {
-      title: '',
       content: '',
     },
     validationSchema: postValidationSchema,
@@ -340,7 +339,13 @@ export function CreatePostForm() {
 
         {/* Submit Button */}
         <button
-          onClick={handleSubmit}
+          type="button"
+          onClick={(e) => {
+            console.log('[CreatePostForm] Post button clicked');
+            e.preventDefault();
+            e.stopPropagation();
+            handleSubmit();
+          }}
           disabled={!canSubmit}
           className={`px-6 py-2 rounded-lg font-medium transition-all ${
             canSubmit

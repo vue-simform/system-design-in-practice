@@ -13,27 +13,25 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useOfflineQueue, syncManager, getAllActions, type QueuedAction } from '../../utils/offlineQueue';
-import { useQueryClient } from '@tanstack/react-query';
-import { feedApi } from '../../services/api';
+import { useOfflineQueue, getAllActions, type QueuedAction } from '../../utils/offlineQueue';
 
-const CURRENT_USER_ID = 'user-1'; // TODO: Replace with real auth
+// const CURRENT_USER_ID = 'user-1'; // TODO: Replace with real auth
 
 export function OfflineSyncStatus() {
   const { stats, isSyncing, syncNow } = useOfflineQueue();
   const [isExpanded, setIsExpanded] = useState(false);
   const [actions, setActions] = useState<QueuedAction[]>([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const queryClient = useQueryClient();
 
   // Update online status
   useEffect(() => {
-    const handleOnline = () => {
+    const handleOnline = async () => {
+      console.log('[OfflineSyncStatus] Coming back online, sync will be triggered by global handler');
       setIsOnline(true);
-      syncNow(); // Auto-sync when coming back online
     };
 
     const handleOffline = () => {
+      console.log('[OfflineSyncStatus] Going offline...');
       setIsOnline(false);
     };
 
@@ -44,61 +42,7 @@ export function OfflineSyncStatus() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [syncNow]);
-
-  // Register sync handlers
-  useEffect(() => {
-    // Handler for CREATE_POST
-    syncManager.registerHandler('CREATE_POST', async (action) => {
-      const { content, mediaUrls } = action.payload;
-      await feedApi.createPost({
-        content,
-        authorId: CURRENT_USER_ID,
-        mediaUrls: mediaUrls || [],
-      });
-      // Invalidate feed cache to show new post
-      queryClient.invalidateQueries({ queryKey: ['feed', 'infinite'] });
-    });
-
-    // Handler for LIKE_POST
-    syncManager.registerHandler('LIKE_POST', async (action) => {
-      const { postId } = action.payload;
-      await feedApi.likePost(postId, CURRENT_USER_ID);
-      // Invalidate specific post - feed will update via shared references
-      queryClient.invalidateQueries({ queryKey: ['post', postId] });
-      queryClient.invalidateQueries({ queryKey: ['feed', 'infinite'] });
-    });
-
-    // Handler for UNLIKE_POST
-    syncManager.registerHandler('UNLIKE_POST', async (action) => {
-      const { postId } = action.payload;
-      await feedApi.unlikePost(postId, CURRENT_USER_ID);
-      // Invalidate specific post - feed will update via shared references
-      queryClient.invalidateQueries({ queryKey: ['post', postId] });
-      queryClient.invalidateQueries({ queryKey: ['feed', 'infinite'] });
-    });
-
-    // Handler for ADD_COMMENT
-    syncManager.registerHandler('ADD_COMMENT', async (action) => {
-      const { postId, text, parentId } = action.payload;
-      await feedApi.addComment(postId, {
-        text,
-        userId: CURRENT_USER_ID,
-        parentId,
-      });
-      // Invalidate comments and post (comment count) - feed updates via shared references
-      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-      queryClient.invalidateQueries({ queryKey: ['post', postId] });
-      queryClient.invalidateQueries({ queryKey: ['feed', 'infinite'] });
-    });
-
-    // Start auto-sync
-    syncManager.startAutoSync();
-
-    return () => {
-      syncManager.stopAutoSync();
-    };
-  }, [queryClient]);
+  }, []);
 
   // Load actions when expanded
   useEffect(() => {

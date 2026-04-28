@@ -36,6 +36,21 @@ const STATIC_ASSETS = [
   '/icon-512.png',
 ];
 
+// Runtime cache for JS/CSS bundles (cached on first load)
+const CACHE_PATTERNS = [
+  /\.js$/,
+  /\.css$/,
+  /\.woff2?$/,
+  /\.ttf$/,
+  /\.eot$/,
+  /\.svg$/,
+  /\.png$/,
+  /\.jpg$/,
+  /\.jpeg$/,
+  /\.gif$/,
+  /\.webp$/,
+];
+
 // API endpoints that should use network-first strategy
 const API_ENDPOINTS = [
   '/api/feed',
@@ -55,7 +70,7 @@ const API_ENDPOINTS = [
  * Pre-caches critical static assets for offline use.
  */
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker...');
+  console.log('[SW] Installing service worker v' + CACHE_VERSION);
 
   event.waitUntil(
     caches
@@ -66,11 +81,13 @@ self.addEventListener('install', (event) => {
       })
       .then(() => {
         console.log('[SW] Static assets cached successfully');
-        // Force activation immediately
+        // Skip waiting immediately to activate faster (helps with offline refresh)
         return self.skipWaiting();
       })
       .catch((error) => {
         console.error('[SW] Failed to cache static assets:', error);
+        // Still skip waiting even if caching fails
+        return self.skipWaiting();
       })
   );
 });
@@ -138,14 +155,20 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation Requests: Cache-first with offline page
+  // Navigation Requests: Try network first, fallback to cached index.html or offline page
   if (request.mode === 'navigate') {
-    event.respondWith(cacheFirstWithOfflineFallback(request));
+    event.respondWith(handleNavigation(request));
     return;
   }
 
-  // Static Assets: Cache-first with network fallback
-  event.respondWith(cacheFirst(request));
+  // Static Assets (JS/CSS/Images): Cache-first with network fallback
+  if (shouldCache(url)) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
+
+  // Everything else: Network with cache fallback
+  event.respondWith(networkFirst(request));
 });
 
 // ============================================================================
@@ -199,22 +222,6 @@ async function cacheFirst(request) {
     }
 
     throw error;
-  }
-}
-
-/**
- * Cache-First with Offline Fallback
- * 
- * Similar to cache-first but returns offline page if everything fails.
- * Best for navigation requests.
- */
-async function cacheFirstWithOfflineFallback(request) {
-  try {
-    return await cacheFirst(request);
-  } catch (error) {
-    console.log('[SW] Serving offline page');
-    const offlinePage = await caches.match('/offline.html');
-    return offlinePage || new Response('Offline', { status: 503 });
   }
 }
 
@@ -275,6 +282,46 @@ function isApiRequest(url) {
 }
 
 /**
+ * Check if URL should be cached
+ */
+function shouldCache(url) {
+  return CACHE_PATTERNS.some((pattern) => pattern.test(url.pathname));
+}
+
+/**
+ * Handle navigation requests specially
+ * Try network first, but always serve the app (index.html) when offline
+ */
+async function handleNavigation(request) {
+  try {
+    // Try network first
+    const networkResponse = await fetch(request);
+    
+    if (networkResponse.ok) {
+      // Cache the response
+      const cache = await caches.open(RUNTIME_CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+      return networkResponse;
+    }
+    
+    throw new Error('Network response not ok');
+  } catch (error) {
+    console.log('[SW] Navigation offline, serving cached app');
+    
+    // When offline, serve the cached index.html (SPA will handle routing)
+    const cachedApp = await caches.match('/index.html') || await caches.match('/');
+    
+    if (cachedApp) {
+      return cachedApp;
+    }
+    
+    // Last resort: offline page
+    const offlinePage = await caches.match('/offline.html');
+    return offlinePage || new Response('Offline', { status: 503 });
+  }
+}
+
+/**
  * Message Handler
  * 
  * Handle messages from the app (e.g., cache invalidation requests)
@@ -309,5 +356,3 @@ self.addEventListener('message', (event) => {
     );
   }
 });
-
-console.log('[SW] Service Worker loaded');

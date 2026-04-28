@@ -93,10 +93,17 @@ export const feedApi = {
    * Fetch paginated feed posts
    * Retry logic handled by React Query
    */
-  async getFeed(cursor?: string, limit = 10): Promise<FeedResponse> {
+  async getFeed(
+    cursor?: string,
+    limit = 10,
+    filter: 'all' | 'following' | 'liked' = 'all',
+    sort: 'newest' | 'popular' | 'trending' = 'newest'
+  ): Promise<FeedResponse> {
     const params = new URLSearchParams();
     if (cursor) params.append('cursor', cursor);
     params.append('limit', limit.toString());
+    params.append('filter', filter);
+    params.append('sort', sort);
     
     const response = await fetchWithTimeout(`${API_BASE_URL}/feed?${params}`);
     return handleResponse<FeedResponse>(response, 'getFeed');
@@ -115,13 +122,22 @@ export const feedApi = {
    * Create a new post
    */
   async createPost(data: CreatePostData): Promise<Post> {
-    const response = await fetch(`${API_BASE_URL}/posts`, {
+    console.log('[API] createPost called with data:', data);
+    console.log('[API] API_BASE_URL:', API_BASE_URL);
+    console.log('[API] Full URL:', `${API_BASE_URL}/posts`);
+    
+    const response = await fetchWithTimeout(`${API_BASE_URL}/posts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('Failed to create post');
-    return response.json();
+    
+    console.log('[API] Response status:', response.status);
+    console.log('[API] Response ok:', response.ok);
+    
+    const result = await handleResponse<Post>(response, 'createPost');
+    console.log('[API] createPost result:', result);
+    return result;
   },
 
   /**

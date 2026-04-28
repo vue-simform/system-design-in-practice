@@ -39,10 +39,10 @@ import { classifyError } from '../../utils/errorHandling';
 import { PostCard } from './PostCard';
 import { CreatePostForm } from './CreatePostForm';
 import { SearchBar } from './SearchBar';
-import { FilterBar } from './FilterBar';
 import { ScrollDebugger } from '../common/ScrollDebugger';
 import { CacheMetrics } from '../common/CacheMetrics';
 import { useKeyboardNavigation, useAnnouncer, AriaLiveRegion } from '../../utils/accessibility';
+import { useScrollRestoration } from '../../hooks/useScrollRestoration';
 
 export function FeedContainer() {
   // Get search/filter state
@@ -55,10 +55,20 @@ export function FeedContainer() {
   const showScrollDebugger = useSettingsStore((state) => state.showScrollDebugger);
   const showCacheMetrics = useSettingsStore((state) => state.showCacheMetrics);
 
+  // Scroll restoration for feed page
+  useScrollRestoration('feed-page', {
+    autoSave: true,
+    autoRestore: true,
+    smooth: false, // Instant restoration for better UX
+    restoreDelay: 100, // Small delay to let content load first
+  });
+
   // Fetch regular feed data with infinite scroll
   const feedQuery = useInfiniteScroll({ 
     limit: PAGINATION.DEFAULT_LIMIT,
     enabled: !isSearchActive, // Disable when searching
+    filter: activeFilter, // Apply filter from store
+    sort: activeSort, // Apply sort from store
   });
 
   // Fetch search results when searching
@@ -124,7 +134,6 @@ export function FeedContainer() {
       <div>
         <CreatePostForm />
         <SearchBar />
-        <FilterBar />
         <LoadingSkeleton count={3} />
       </div>
     );
@@ -138,7 +147,6 @@ export function FeedContainer() {
       <div>
         <CreatePostForm />
         <SearchBar />
-        <FilterBar />
         <div className="mt-4">
           {/* Use specific error components for better UX */}
           {appError.type === 'NETWORK' ? (
@@ -173,7 +181,6 @@ export function FeedContainer() {
       <div>
         <CreatePostForm />
         <SearchBar />
-        <FilterBar />
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <EmptyState
             title={isSearchActive ? `No results for "${debouncedQuery}"` : 'No posts yet'}
@@ -201,9 +208,6 @@ export function FeedContainer() {
 
       {/* Search Bar */}
       <SearchBar />
-
-      {/* Filter Bar */}
-      <FilterBar />
 
       {/* Feed Header */}
       <div className="mb-6">
