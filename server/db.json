@@ -239,7 +239,7 @@
       "content": "TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST",
       "mediaUrls": [],
       "likeCount": 1,
-      "commentCount": 3,
+      "commentCount": 4,
       "shareCount": 0,
       "createdAt": "2025-12-15T05:01:11.830Z",
       "updatedAt": "2025-12-15T05:01:11.830Z"
@@ -250,7 +250,7 @@
       "content": "TEST",
       "mediaUrls": [],
       "likeCount": 1,
-      "commentCount": 0,
+      "commentCount": 1,
       "shareCount": 0,
       "createdAt": "2025-12-15T05:01:03.616Z",
       "updatedAt": "2025-12-15T05:01:03.616Z"
@@ -261,7 +261,7 @@
       "content": "JJJJJJJJJJJJJJ",
       "mediaUrls": [],
       "likeCount": 1,
-      "commentCount": 2,
+      "commentCount": 3,
       "shareCount": 0,
       "createdAt": "2025-12-12T10:16:39.309Z",
       "updatedAt": "2025-12-12T10:16:39.309Z"
@@ -2218,6 +2218,29 @@
       "text": "KLKL",
       "parentId": null,
       "createdAt": "2025-12-15T12:20:22.071Z"
+    },
+    {
+      "id": "c1776859924757",
+      "postId": "p1765774871830",
+      "authorId": "u1",
+      "parentId": null,
+      "createdAt": "2026-04-22T12:12:04.757Z"
+    },
+    {
+      "id": "c1776859962602",
+      "postId": "p1765774863616",
+      "authorId": "user-1",
+      "text": "the quick",
+      "parentId": null,
+      "createdAt": "2026-04-22T12:12:42.602Z"
+    },
+    {
+      "id": "c1776860555704",
+      "postId": "p1765534599309",
+      "authorId": "user-1",
+      "text": "hh",
+      "parentId": null,
+      "createdAt": "2026-04-22T12:22:35.704Z"
     }
   ],
   "likes": [

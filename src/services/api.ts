@@ -1,7 +1,7 @@
 import type { FeedResponse, Post, Comment, CreatePostData } from '../types';
 import { classifyError, logError } from '../utils/errorHandling';
 
-const API_BASE_URL = 'https://system-design-practical-production.up.railway.app/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://system-design-practical-production.up.railway.app/api';
 const DEFAULT_TIMEOUT = 30000; // 30 seconds
 
 // ============================================================================
