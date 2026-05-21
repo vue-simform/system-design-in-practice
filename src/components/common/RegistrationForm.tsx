@@ -1,4 +1,5 @@
 import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { email as emailRule, minLength, required, validateField } from '../../utils/validation';
 
 interface RegistrationFormValues {
   email: string;
@@ -10,35 +11,29 @@ interface RegistrationFormTouched {
   password: boolean;
 }
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+interface RegistrationFormProps {
+  onSubmit?: (values: RegistrationFormValues) => void;
+}
+
+const EMAIL_VALIDATORS = [
+  required({ message: 'Email is required' }),
+  emailRule({ message: 'Please enter a valid email address' }),
+];
+
+const PASSWORD_VALIDATORS = [
+  required({ message: 'Password is required', trim: false }),
+  minLength(8, { message: 'Password must be at least 8 characters', trim: false }),
+];
 
 function validateEmail(email: string): string | undefined {
-  const trimmedEmail = email.trim();
-
-  if (!trimmedEmail) {
-    return 'Email is required';
-  }
-
-  if (!EMAIL_REGEX.test(trimmedEmail)) {
-    return 'Please enter a valid email address';
-  }
-
-  return undefined;
+  return validateField(email, EMAIL_VALIDATORS);
 }
 
 function validatePassword(password: string): string | undefined {
-  if (!password) {
-    return 'Password is required';
-  }
-
-  if (password.length < 8) {
-    return 'Password must be at least 8 characters';
-  }
-
-  return undefined;
+  return validateField(password, PASSWORD_VALIDATORS);
 }
 
-export function RegistrationForm() {
+export function RegistrationForm({ onSubmit }: RegistrationFormProps) {
   const [values, setValues] = useState<RegistrationFormValues>({
     email: '',
     password: '',
@@ -68,6 +63,13 @@ export function RegistrationForm() {
     };
 
   const handleBlur = (field: keyof RegistrationFormTouched) => () => {
+    if (field === 'email') {
+      setValues((prev) => ({
+        ...prev,
+        email: prev.email.trim(),
+      }));
+    }
+
     setTouched((prev) => ({
       ...prev,
       [field]: true,
@@ -82,6 +84,11 @@ export function RegistrationForm() {
     if (!isFormValid) {
       return;
     }
+
+    onSubmit?.({
+      email: values.email.trim(),
+      password: values.password,
+    });
   };
 
   return (
