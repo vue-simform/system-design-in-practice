@@ -18,6 +18,7 @@ import { SkipLink } from './utils/accessibility';
 import { FeedErrorBoundary, ErrorBoundary } from './components/common/ErrorBoundary';
 import { OfflineSyncStatus } from './components/common/OfflineSyncStatus';
 import { PWAStatus } from './components/common/PWAStatus';
+import { RegistrationForm } from './components/common/RegistrationForm';
 import { useSettingsStore } from './store/settingsStore';
 import { initializeOfflineQueue } from './utils/offlineQueueInit';
 import { useQueryClient } from '@tanstack/react-query';
@@ -313,6 +314,15 @@ function Home() {
             Server running at https://system-design-practical-production.up.railway.app
           </p>
         </div>
+      </div>
+
+      {/* Registration Form Demo */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">Registration Form</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Enter a valid email and a password with at least 8 characters.
+        </p>
+        <RegistrationForm />
       </div>
     </div>
   );
